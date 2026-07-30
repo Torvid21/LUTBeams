@@ -1,6 +1,8 @@
 # LUTBeams
 Volumetric light beams for VRChat
 
+<img width="1174" height="940" alt="Image" src="https://github.com/user-attachments/assets/926bf6f3-f9d1-4cfc-b255-6e1eda2582db" />
+
 ## Usage
 1. place a LUTBeamManager in the scene
 2. place a LUTBeam in the scene
