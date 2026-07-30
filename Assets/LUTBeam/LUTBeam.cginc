@@ -1,0 +1,485 @@
+﻿// I dedicate this work to the public domain. Do as you will.
+// Initial implementation by Torvid
+// Optimizations by ValueFactory
+// Tweaks and MDMX integration by Micca
+
+// position resolution, IE how many possible places the camera can be.
+#define start_size 8
+// angular resolution, IE how many angles can the beam be viewed from.
+#define end_size 128
+
+struct BeamData
+{
+    // Start texcoords at 32 so they are unlikely to be used by something else.
+    float4 vertex : SV_POSITION;
+    float2 screenPosition : TEXCOORD40;
+    float angleX : TEXCOORD41;
+    float angleY : TEXCOORD42;
+    float frustumCorrection : TEXCOORD43;
+    float frustumNearZ : TEXCOORD44;
+    float frustumFarZ : TEXCOORD45;
+    float frustumOffset : TEXCOORD46;
+    float3 rayOrigin  : TEXCOORD47;
+    float3 cameraForward  : TEXCOORD48;
+    float4 worldPosLocal : TEXCOORD49;
+    float3 colorGobo : TEXCOORD50;
+    float3 colorVolume : TEXCOORD51;
+    float4 clipPlane : TEXCOORD52;
+    float4 hotNorm : TEXCOORD53;
+};
+
+float inverselerp(float from, float to, float value)
+{
+    return (value - from) / (to - from);
+}
+
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+
+#if GOBO_ARRAY
+    Texture2DArray _GoboTex;
+    Texture2DArray _GoboLUT;
+#else
+    Texture2D _GoboTex;
+    Texture2D _GoboLUT;
+#endif
+
+SamplerState _SamplerClampLinear;
+Texture2D _GrabTexture;
+float _VRChatMirrorMode;
+
+float3 GetScale()
+{
+    float3 scale = 0;
+    scale.x = length(float3(unity_ObjectToWorld._m00, unity_ObjectToWorld._m10, unity_ObjectToWorld._m20));
+    scale.y = length(float3(unity_ObjectToWorld._m01, unity_ObjectToWorld._m11, unity_ObjectToWorld._m21));
+    scale.z = length(float3(unity_ObjectToWorld._m02, unity_ObjectToWorld._m12, unity_ObjectToWorld._m22));
+    return scale;
+}
+
+float4x4 ObjectToWorld_NoScale()
+{
+    float3 right   = normalize(float3(unity_ObjectToWorld._m00, unity_ObjectToWorld._m10, unity_ObjectToWorld._m20));
+    float3 up      = normalize(float3(unity_ObjectToWorld._m01, unity_ObjectToWorld._m11, unity_ObjectToWorld._m21));
+    float3 forward = normalize(float3(unity_ObjectToWorld._m02, unity_ObjectToWorld._m12, unity_ObjectToWorld._m22));
+    float3 t       = float3(unity_ObjectToWorld._m03, unity_ObjectToWorld._m13, unity_ObjectToWorld._m23);
+
+    float4x4 m = unity_ObjectToWorld;
+    m._m00_m10_m20_m30 = float4(right,   0.0);
+    m._m01_m11_m21_m31 = float4(up,      0.0);
+    m._m02_m12_m22_m32 = float4(forward, 0.0);
+
+    m._m03 = t.x; m._m13 = t.y; m._m23 = t.z;
+    m._m30 = 0.0; m._m31 = 0.0; m._m32 = 0.0; m._m33 = 1.0;
+
+    return m;
+}
+
+// NOTE(valuef): Mirrors use oblique clipping planes so we need to
+// do some extra math to properly convert the depth we sample out
+// of their depth textures.  
+// The code that does that here is based off:
+// https://github.com/lukis101/VRCUnityStuffs/blob/master/Shaders/DJL/Overlays/WorldPosOblique.shader
+// Retrieved 2025-09-23
+float4 CalculateFrustumCorrection()
+{
+    float x1 = -UNITY_MATRIX_P._31 / (UNITY_MATRIX_P._11 * UNITY_MATRIX_P._34);
+    float x2 = -UNITY_MATRIX_P._32 / (UNITY_MATRIX_P._22 * UNITY_MATRIX_P._34);
+    return float4(x1, x2, 0, UNITY_MATRIX_P._33 / UNITY_MATRIX_P._34 + x1 * UNITY_MATRIX_P._13 + x2 * UNITY_MATRIX_P._23);
+}
+
+float CorrectedLinearEyeDepth(float z, float frustumCorrection)
+{
+    return 1.0 / (z / UNITY_MATRIX_P._34 + frustumCorrection);
+}
+
+
+// takes a point at the edge of the square and turns it into a piecewise value
+float EdgeEncode(float2 p)
+{
+    if (abs(p.y - 0.0) < 1e-5) return p.x * 0.25;
+    else if (abs(p.x - 1.0) < 1e-5) return 0.25 + p.y * 0.25;
+    else if (abs(p.y - 1.0) < 1e-5) return 0.5 + (1.0 - p.x) * 0.25;
+    else if (abs(p.x - 0.0) < 1e-5) return 0.75 + (1.0 - p.y) * 0.25;
+    return 0.0;
+}
+            
+// creates a point at the edge of the unit square from t going around the square
+float2 EdgeDecode(float t)
+{
+    t = frac(t);
+    float ft = t * 4.0;
+    if (ft < 1.0) return float2(ft, 0.0);
+    else if (ft < 2.0) return float2(1.0, ft - 1.0);
+    else if (ft < 3.0) return float2(3.0 - ft, 1.0);
+    else return float2(0.0, 4.0 - ft);
+}
+
+float3 WorldToFrustumVector(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+{
+    float3 result = 0;
+    result.x = dot(a, right);
+    result.y = dot(a, up);
+    result.z = dot(a, forward);
+    return result;
+}
+
+float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+{
+    float3 result = 0;
+    result.x = dot(a-apex, right);
+    result.y = dot(a-apex, up);
+    result.z = dot(a-apex, forward);
+    return result;
+}
+
+BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float hotness)
+{
+    BeamData beam = (BeamData)0;
+    
+    beam.angleX = angleX;
+    beam.angleY = angleY;
+
+    float frustumNearZ = (nearRadius / max(beam.angleX, beam.angleY));
+    float frustumFarZ = (nearRadius / max(beam.angleX, beam.angleY)) + farz;
+    float frustumOffset = -(nearRadius / max(beam.angleX, beam.angleY)) + offset;
+    
+    float t = vertexPos.z+0.5;
+    beam.vertex = vertexPos;
+    beam.vertex.z = lerp(frustumNearZ, frustumFarZ, t);
+    beam.vertex.x *= beam.vertex.z * beam.angleX * 2;
+    beam.vertex.y *= beam.vertex.z * beam.angleY * 2;
+    beam.vertex.z += frustumOffset;
+
+    float3 forward = float3(0, 0, -1);
+    float3 right = float3(1, 0, 0);
+    float3 up = float3(0, 1, 0);
+
+    // Shader-based rotation and position offsets should probably go here!
+    // Since you're digging here, you probably already know what you are doing, so who am I to say things x>
+    float3 pos = 0; 
+    //float goboSpin = _Time.g;
+    //float tilt = _Time.g;
+    //float pan = _Time.g;
+    //float2x2 spinMatrix = {
+    //    cos(goboSpin), -sin(goboSpin),
+    //    sin(goboSpin),  cos(goboSpin)
+    //};
+    //float2x2 tiltMatrix = {
+    //    cos(tilt), -sin(tilt),
+    //    sin(tilt),  cos(tilt)
+    //};
+    //float2x2 panMatrix = {
+    //    cos(pan), -sin(pan),
+    //    sin(pan),  cos(pan)
+    //};
+    //beam.vertex.xy = mul(beam.vertex.xy, spinMatrix);
+    //beam.vertex.yz = mul(beam.vertex.yz, tiltMatrix);
+    //beam.vertex.xy = mul(beam.vertex.xy, panMatrix);
+    // 
+    //forward.xy = mul(forward.xy, spinMatrix);
+    //forward.yz = mul(forward.yz, tiltMatrix);
+    //forward.xy = mul(forward.xy, panMatrix);
+    //right.xy = mul(right.xy, spinMatrix);
+    //right.yz = mul(right.yz, tiltMatrix);
+    //right.xy = mul(right.xy, panMatrix);
+    //up.xy = mul(up.xy, spinMatrix);
+    //up.yz = mul(up.yz, tiltMatrix);
+    //up.xy = mul(up.xy, panMatrix);
+
+    forward = normalize(mul(unity_ObjectToWorld, float4(forward, 0)).xyz);
+    right = normalize(mul(unity_ObjectToWorld, float4(right, 0)).xyz);
+    up = normalize(mul(unity_ObjectToWorld, float4(up, 0)).xyz);
+    
+    float3 worldPos = mul(ObjectToWorld_NoScale(), beam.vertex);
+    worldPos.xyz += pos;
+    beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
+
+    beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
+
+    float3 apex = mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz;
+    apex -= forward * frustumOffset;
+    
+    apex += pos;
+
+    beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
+    beam.frustumNearZ  = frustumNearZ;
+    beam.frustumFarZ   = frustumFarZ;
+    beam.frustumOffset = frustumOffset;
+
+    float3 rayDir = normalize(worldPos - _WorldSpaceCameraPos);
+    float3 rayOrigin = _WorldSpaceCameraPos;
+    float3 cameraForward = unity_CameraToWorld._m02_m12_m22;
+
+    float3 objectPos = mul(unity_ObjectToWorld, float4(0, 0, 0, 1));
+
+    beam.cameraForward = WorldToFrustumVector(apex, forward, right, up, cameraForward);
+
+    beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
+    beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
+    
+    beam.colorGobo = color * brightnessGobo * 1;
+    beam.colorVolume = color * brightnessVolume * 0.1;
+    
+    float e = 0.01;
+    float Aa = 1.0 + e;
+    float p = hotness + 1e-4;
+    float3 q = float3(1.0, 2.0, 3.0) - p;
+    float3 G = (pow(Aa, q) - pow(e, q)) / q;
+    float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
+    beam.hotNorm = 3.198 / I;
+
+    // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
+    #if defined(USING_STEREO_MATRICES)
+        float3 testCam = (unity_StereoWorldSpaceCameraPos[0] + unity_StereoWorldSpaceCameraPos[1]) * 0.5;
+    #else
+        float3 testCam = _WorldSpaceCameraPos;
+    #endif
+    testCam = WorldToFrustumPosition(apex, forward, right, up, testCam);
+
+    float inside = min(min(
+        min(-dot(normalize(float3( 1, 0, beam.angleX)), testCam),
+            -dot(normalize(float3(-1, 0, beam.angleX)), testCam)),
+        min(-dot(normalize(float3( 0,-1, beam.angleY)), testCam),
+            -dot(normalize(float3( 0, 1, beam.angleY)), testCam))),
+        min(-frustumNearZ - testCam.z,
+                frustumFarZ  + testCam.z));
+
+    float margin = 0.25;
+    bool useQuad = inside > -margin;
+
+    // 2. Mirrors can cut open a hole in the beam, make it a fullscreen quad in that case so the hole is hidden.
+    if (_VRChatMirrorMode != 0)
+    {
+        float sMin = 1e30, sMax = -1e30;
+        [unroll]
+        for (uint c = 0; c < 8; c++)
+        {
+            float3 corner = float3(c & 1 ? 0.5 : -0.5,
+                                    c & 2 ? 0.5 : -0.5,
+                                    c & 4 ? 1.0 : 0.0);
+            float  cz = lerp(frustumNearZ, frustumFarZ, corner.z);
+            float3 p  = float3(corner.x * (cz * beam.angleX * 2), corner.y * (cz * beam.angleY * 2),  cz + frustumOffset);
+            float3 cw = mul(ObjectToWorld_NoScale(), float4(p, 1)).xyz;
+
+            #if defined(USING_STEREO_MATRICES)
+                float4 c0 = mul(unity_StereoMatrixVP[0], float4(cw, 1));
+                float4 c1 = mul(unity_StereoMatrixVP[1], float4(cw, 1));
+                sMin = min(sMin, min(c0.w - c0.z, c1.w - c1.z));
+                sMax = max(sMax, max(c0.w - c0.z, c1.w - c1.z));
+            #else
+                float4 c0 = mul(UNITY_MATRIX_VP, float4(cw, 1));
+                sMin = min(sMin, c0.w - c0.z);
+                sMax = max(sMax, c0.w - c0.z);
+            #endif
+        }
+        useQuad = useQuad || (sMin < 0.05 && sMax > -0.05);
+
+
+        // Also generate an extra clipping plane for the oblique frustum Z-cut
+        float4 pl = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) - float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
+        float3 nf = WorldToFrustumVector(apex, forward, right, up, pl.xyz);
+        float  wf = dot(pl.xyz, apex) + pl.w;
+        beam.clipPlane = float4(-nf, wf);
+    }
+
+    // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
+    if (useQuad)
+    {
+        beam.vertex = float4(sign(vertexPos.x), sign(vertexPos.y), UNITY_NEAR_CLIP_VALUE, 1.0);
+    
+        float2 ndc = sign(vertexPos.xy) * 2.0;
+        beam.vertex = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1.0);
+    
+        const float d = 4.0;
+        float3 viewPos = float3(
+            d * (ndc.x + UNITY_MATRIX_P._m02) / UNITY_MATRIX_P._m00,
+            d * (ndc.y + UNITY_MATRIX_P._m12) / UNITY_MATRIX_P._m11,
+            -d);
+        float3 wp = mul(UNITY_MATRIX_I_V, float4(viewPos, 1)).xyz;
+    
+        beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, wp);
+        beam.screenPosition    = ComputeScreenPos(beam.vertex).xy;
+        beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
+    }
+
+    return beam;
+ }
+
+float Bayer2(float2 a) { a = floor(a); return frac(a.x * 0.5 + a.y * a.y * 0.75); }
+float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
+float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
+
+float3 MagicSample(float2 start, float2 end, int gobo, bool colorEnabled, float2 pixel)
+{
+#if 0
+    float tex_size = start_size * end_size;
+
+    float2 posF          = saturate(end) * (end_size - 1);
+    float2 cell          = min(floor(posF), end_size - 2);
+    float2 chunkblend    = posF - cell;
+    float2 chunkblendInv = 1 - chunkblend;
+    float2 chunk         = cell * start_size;
+    
+    float2 base = chunk + clamp(start * (start_size - 1), 0, start_size - 1) + 0.5;
+    
+    float s0 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        0))        / tex_size, gobo), 0).r;
+    float s1 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, 0))        / tex_size, gobo), 0).r;
+    float s2 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        start_size)) / tex_size, gobo), 0).r;
+    float s3 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, start_size)) / tex_size, gobo), 0).r;
+    
+    return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
+         + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+#else
+
+    // I realized I can sample just once, the angular resolution will look dithery
+    // but maybe we can get away with it, ahaha. I left the old verison commented out
+    // in case people get upset
+    float tex_size = start_size * end_size;
+    float2 n = float2(Bayer4(pixel), Bayer4(pixel.yx + 31.0));
+    float2 posF  = saturate(end) * (end_size - 1);
+    float2 cell  = floor(posF + n);
+    float2 chunk = cell * start_size;
+
+    float2 base = chunk + clamp(start * (start_size - 1), 0, start_size - 1) + 0.5;
+
+#if GOBO_ARRAY
+    float3 result = _GoboLUT.SampleLevel(_SamplerClampLinear, float3(base / tex_size, gobo), 0).rgb;
+#else
+    float3 result = _GoboLUT.SampleLevel(_SamplerClampLinear, base / tex_size, 0).rgb;
+#endif
+
+    return colorEnabled ? result : result.rrr;
+#endif
+}
+
+float3 LUTBeamFrag(BeamData beam, int goboInput, bool colorEnabled, float hotness)
+{
+    float frustumNearZ = beam.frustumNearZ;
+    float frustumFarZ = beam.frustumFarZ;
+    float frustumOffset = beam.frustumOffset;
+
+    float3 view_delta = beam.worldPosLocal - beam.rayOrigin;
+    float sq_view_dist = dot(view_delta, view_delta);
+    float view_dist = sqrt(sq_view_dist);
+
+    float3 cameraForward = beam.cameraForward;
+    float3 rayDir = view_delta / view_dist;
+    float3 rayOrigin = beam.rayOrigin;
+
+    float2 suv = beam.screenPosition.xy / beam.vertex.w;
+
+    float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
+    float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
+
+    float4 leftPlane   = float4((float3( 1, 0, beam.angleX)), 0);
+    float4 rightPlane  = float4((float3(-1, 0, beam.angleX)), 0);
+    float4 bottomPlane = float4((float3( 0,-1, beam.angleY)), 0);
+    float4 topPlane    = float4((float3( 0, 1, beam.angleY)), 0);
+    float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
+    float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
+    
+    float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
+
+    float tMin = -1e30;
+    float tMax = 1e30;
+
+    [unroll]
+    for(int i = 0; i < 7; i++)
+    {
+        float denom = dot(planes[i].xyz, rayDir);
+        float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+
+        if (denom < 0)
+            tMin = max(tMin, t);
+        else
+            tMax = min(tMax, t);
+    }
+
+    float entryDistance = max(0, tMin);
+    float exitDistance = max(0, tMax);
+    
+    bool hit = (exitDistance > SceneDistance);
+
+    if(SceneDistance < 0.001)
+        hit = false;
+
+    // NOTE(valuef): Regarding the if: Only clamp when the pixel depth isn't approaching the far plane.
+    // This should only be false in mirrors due to the oblique frustum correction when the pixel we're drawing
+    // hasn't had any depth written to it.
+    // 2025-09-23
+    if(SceneDistance >= 0)
+    {
+        entryDistance = min(entryDistance, SceneDistance);
+        exitDistance = min(exitDistance, SceneDistance);
+    }
+
+    if(exitDistance - entryDistance < 0.01)
+        discard;
+    
+    float3 entryPos = rayOrigin + rayDir * entryDistance;
+    float3 exitPos = rayOrigin + rayDir * exitDistance;
+    
+    entryPos.xyz = -entryPos.zxy;
+    exitPos.xyz = -exitPos.zxy;
+    
+
+    float3 entryNormalized = entryPos.yzx;
+    float3 exitNormalized = exitPos.yzx;
+    
+    entryNormalized.xy /= float2(beam.angleX, beam.angleY) * entryNormalized.z * 2;
+    entryNormalized.xy = entryNormalized.xy + 0.5;
+
+    exitNormalized.xy /= float2(beam.angleX, beam.angleY) * exitNormalized.z * 2;
+    exitNormalized.xy = exitNormalized.xy + 0.5;
+
+    float t = 0;
+    float3 col = 0;
+    float falloff = 10;
+
+    // closest point on ray
+    float3 A  = entryPos - float3(frustumNearZ, 0, 0);
+    float3 B  = exitPos  - float3(frustumNearZ, 0, 0);
+    float3 AB = B - A;
+    float  d2 = max(dot(AB, AB), 1e-5);
+    float  ct = saturate(dot(-A, AB) / d2);
+    float3 closest = A + ct * AB;
+    float distToSource = length(closest);
+
+    // Normalize to 0-1
+    t = saturate(inverselerp(frustumNearZ-0.06, frustumFarZ, distToSource + frustumNearZ));
+
+    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -hotness);
+    float3 volColor = volFac * beam.colorVolume * beam.hotNorm;
+
+    // early out if the fade would kill the anyways
+    if(volFac < 0.001)
+        discard;
+
+    col = MagicSample(entryNormalized.xy, exitNormalized.xy, goboInput, colorEnabled, beam.vertex.xy);
+
+    col *= volColor;
+
+    // gobo on the surface
+    if(hit && beam.colorGobo.r > 0 && beam.colorGobo.g > 0 && beam.colorGobo.b > 0)
+    {
+#if GOBO_ARRAY
+        float3 goboResult = _GoboTex.SampleLevel(_SamplerClampLinear, float3(exitNormalized.xy, goboInput), 0).rgb;
+#else
+        float3 goboResult = _GoboTex.SampleLevel(_SamplerClampLinear, exitNormalized.xy, 0).rgb;
+#endif
+        if(!colorEnabled)
+            goboResult = goboResult.rrr;
+
+        // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
+        if(goboResult.r > 0 || goboResult.g > 0 || goboResult.b > 0)
+        {
+            goboResult *= volFac * beam.colorGobo * beam.hotNorm;
+
+            float4 grab = _GrabTexture.SampleLevel(_SamplerClampLinear, suv, 0);
+            col += grab.rgb * goboResult;
+        }
+    }
+
+    return float4(col, 1);
+    
+}
