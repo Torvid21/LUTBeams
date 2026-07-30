@@ -14,7 +14,4 @@ Replace the images in the LUTBeamManager, then right click it and press "Generat
 <img src="Media/20260730221904896.png" width="75%"/>
 
 ## Use with VRSL
-who knows
-
-## Use with MDMX
-idk
+don't know but should be easy to integrate.
