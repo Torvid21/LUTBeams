@@ -9,8 +9,9 @@ Volumetric light beams for VRChat
 3. ???
 
 ## To change gobo images
-Replace the images in the LUTBeamManager thenright click it and press "Generate Materials". 
+Replace the images in the LUTBeamManager, then right click it and press "Generate Materials". 
 This will update the texture arrays with your new gobos
+<img width="761" height="456" alt="Image" src="https://github.com/user-attachments/assets/fef20afc-b441-4002-a7dc-8427af127c8d" />
 
 ## Use with VRSL
 who knows
