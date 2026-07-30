@@ -1,5 +1,10 @@
 # LUTBeams
-Volumetric light beams for VRChat
+Volumetric light beams for VRChat, As seen in FURALITY and STAGE FLIGHT. <3
+
+Example use cases:
+1. Spotlights for light shows
+2. Projector light for video players
+3. Ambient light shafts
 
 <img src="Media/20260730195451477.png" />
 
@@ -15,3 +20,6 @@ Replace the images in the LUTBeamManager, then right click it and press "Generat
 
 ## Use with VRSL
 don't know but should be easy to integrate.
+
+## How?
+Raymarching volumetrics is way too expensive. The trick is raymarch results baked to a lookup texture (LUT), so that they can be grabbed very fast at runtime.
