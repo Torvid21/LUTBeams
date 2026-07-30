@@ -17,8 +17,7 @@ Shader "Unlit/ScreenCopy"
             #pragma fragment frag
 
             #include "UnityCG.cginc"
-            //#include "Assets/Utils.cginc"
-        
+
             SamplerState my_Trilinear_Aniso8_Clamp_sampler;
 
             struct appdata
