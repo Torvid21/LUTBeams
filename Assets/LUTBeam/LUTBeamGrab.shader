@@ -2,6 +2,8 @@ Shader "LUTBeam/Grab"
 {
     SubShader
     {
+        Tags {"RenderType"="Transparent" "Queue"="Transparent+300" }
+
         GrabPass
         {
             "_GrabTexture"

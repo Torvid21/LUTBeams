@@ -26,7 +26,7 @@ Shader "LUTBeam/VideoExample"
     }
     SubShader
     {
-        Tags { "RenderType"="Transparent" "Queue"="Transparent" }
+        Tags {"RenderType"="Transparent" "Queue"="Transparent+304" }
 
         LOD 100
 
