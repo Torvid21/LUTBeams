@@ -19,9 +19,9 @@ Replace the images in the LUTBeamManager, then right click it and press "Generat
 <img src="Media/20260730221904896.png" width="75%"/>
 
 ## Use with VRSL
-don't know but should be easy to integrate.
+Don't know but should be easy to integrate.
 
 ## How?
-Raymarching volumetrics per pixel is way too expensive, LUTBeams gets around this by baking raymarch results to a lookup texture (LUT), so that they can be grabbed very fast at runtime.
+Raymarching volumetrics per pixel is way too expensive, I get around this by baking raymarch results to a lookup texture (LUT), so that they can later be grabbed very fast at runtime.
 
-Somewhat similar to Latrix Laser System by OwenThe Programmer, though theirs is far more advanced.
+Somewhat similar to Latrix Laser System by OwenTheProgrammer, though theirs is far more advanced.
