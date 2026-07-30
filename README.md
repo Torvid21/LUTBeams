@@ -1,5 +1,5 @@
 # LUTBeams
-Volumetric light beams for VRChat, As seen in FURALITY and STAGE FLIGHT. <3
+Fast (ish) volumetric light beams for VRChat, As seen in FURALITY and STAGE FLIGHT. <3
 
 Example use cases:
 1. Spotlights for light shows
