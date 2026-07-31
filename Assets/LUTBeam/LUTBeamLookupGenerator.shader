@@ -57,7 +57,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
                 return o;
             }
 
-            #define Supersample 1
+            #define Supersample 4
 
             float4 frag (v2f input) : SV_Target
             {
@@ -119,24 +119,24 @@ Shader "LUTBeam/GoboLookupGenerator" {
                                 [loop]
                                 for (int ey = 0; ey < Supersample; ey++)
                                 {
+                                    
+                                    float2 startOffset = (float2(sx, sy) + 0.5) / Supersample - 0.5;
+                                    float2 endOffset   = (float2(ex, ey) + 0.5) / Supersample - 0.5;
+
+                                    float2 newStart = start + startOffset * startPixelSize * startScale;
+                                    float2 newEnd   = end   + endOffset   * endPixelSize * endScale;
+
+                                    [loop]
+                                    for (int i = 0; i < _StepCount; i++)
                                     {
-                                        float2 startOffset = (float2(sx, sy) + 0.5) / Supersample - 0.5;
-                                        float2 endOffset   = (float2(ex, ey) + 0.5) / Supersample - 0.5;
-
-                                        float2 newStart = start + startOffset * startPixelSize * startScale;
-                                        float2 newEnd   = end   + endOffset   * endPixelSize   * endScale;
-
-                                        [loop]
-                                        for (int i = 0; i < _StepCount; i++)
-                                        {
-                                            float t = i / (_StepCount - 1);
-                                            float2 pos = lerp(newStart, newEnd, t);
-                                            pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
-                                            result += tex2Dlod(_MainTex, float4(pos, 0, 0))
-                                                    * tex2Dlod(_Mask,    float4(pos, 0, 0))
-                                                    * !any(pos - saturate(pos));
-                                        }
+                                        float t = i / (_StepCount - 1);
+                                        float2 pos = lerp(newStart, newEnd, t);
+                                        pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
+                                        result += tex2Dlod(_MainTex, float4(pos, 0, 0))
+                                                * tex2Dlod(_Mask,    float4(pos, 0, 0))
+                                                * !any(pos - saturate(pos));
                                     }
+                                    
                                 }
                             }
                         }

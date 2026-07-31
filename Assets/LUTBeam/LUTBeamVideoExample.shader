@@ -16,7 +16,7 @@ Shader "LUTBeam/VideoExample"
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
         _BeamIntensity ("_BeamIntensity", Range(0, 4.0)) = 1
-        _BeamHotness ("_BeamHotness", Range(0, 3.0)) = 1
+        _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 4.0)) = 1
     }
     SubShader
@@ -49,10 +49,10 @@ Shader "LUTBeam/VideoExample"
             float4 _Color;
             float _GoboIntensity;
             float _BeamIntensity;
-            float _BeamHotness;
+            float _BeamFalloff;
 
-            #define LUTBEAM_CALLBACK_GOBO 1
-            float3 LUTBeamCallbackGobo(SamplerState samp, float2 uv)
+            #define LUTBEAM_CALLBACK_PROJECTION 1
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 return _GoboTex.SampleLevel(samp, uv, 0).rgb;
             }
@@ -89,7 +89,7 @@ Shader "LUTBeam/VideoExample"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearRadius, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamHotness);
+                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearRadius, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }
@@ -99,7 +99,7 @@ Shader "LUTBeam/VideoExample"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
-                float3 col = LUTBeamFrag(i.beam, _BeamHotness);
+                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
                 return float4(col, 0);
             }
             ENDCG

@@ -124,7 +124,7 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
     return result;
 }
 
-BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamHotness)
+BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
 {
     BeamData beam = (BeamData)0;
     
@@ -227,7 +227,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     
     float e = 0.01;
     float Aa = 1.0 + e;
-    float p = beamHotness + 1e-4;
+    float p = beamFalloff + 1e-4;
     float3 q = float3(1.0, 2.0, 3.0) - p;
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
@@ -360,7 +360,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel)
 #endif
 }
 
-float3 LUTBeamFrag(BeamData beam, float beamHotness)
+float3 LUTBeamFrag(BeamData beam, float beamFalloff)
 {
     float frustumNearZ = beam.frustumNearZ;
     float frustumFarZ = beam.frustumFarZ;
@@ -456,7 +456,7 @@ float3 LUTBeamFrag(BeamData beam, float beamHotness)
     // Normalize to 0-1
     t = saturate(inverselerp(frustumNearZ-0.06, frustumFarZ, distToSource + frustumNearZ));
     
-    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamHotness);
+    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
     float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
     float3 volColor = volFac * beam.colorVolume * beam.hotNorm;
 
@@ -471,8 +471,8 @@ float3 LUTBeamFrag(BeamData beam, float beamHotness)
     // gobo on the surface
     if(hit && any(beam.colorGobo))
     {
-#if LUTBEAM_CALLBACK_GOBO
-        float3 goboResult = LUTBeamCallbackGobo(_SamplerClampLinear, exitNormalized.xy);
+#if LUTBEAM_CALLBACK_PROJECTION
+        float3 goboResult = LUTBeamCallbackProjection(_SamplerClampLinear, exitNormalized.xy);
 #else
         float3 goboResult = 1;
 #endif
