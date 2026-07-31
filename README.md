@@ -25,7 +25,7 @@ Replace the images in the LUTBeamManager, then right click it and press "Generat
 ## Use with VRSL
 Don't know but should be easy to integrate.
 
-## Liscence
+## Attribution
 All the code is MIT / Public Domain.
 
 Therinization image is by Nightshades
