@@ -13,6 +13,8 @@ Example uses:
 2. place a LUTBeam in the scene
 3. ???
 
+When running the LUT bake in a CRT, make sure it's going down _Fast > 0.5, otherwise it will be *extremely* slow
+
 ## To change gobo images
 Replace the images in the LUTBeamManager, then right click it and press "Generate Materials". This will update the texture arrays with your new gobos.
 

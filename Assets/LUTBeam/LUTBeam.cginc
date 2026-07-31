@@ -13,8 +13,8 @@ struct BeamData
     // Start texcoords at 32 so they are unlikely to be used by something else.
     float4 vertex : SV_POSITION;
     float2 screenPosition : TEXCOORD40;
-    float angleX : TEXCOORD41;
-    float angleY : TEXCOORD42;
+    float zoomX : TEXCOORD41;
+    float zoomY : TEXCOORD42;
     float frustumCorrection : TEXCOORD43;
     float frustumNearZ : TEXCOORD44;
     float frustumFarZ : TEXCOORD45;
@@ -34,14 +34,6 @@ float inverselerp(float from, float to, float value)
 }
 
 UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
-
-#if GOBO_ARRAY
-    Texture2DArray _GoboTex;
-    Texture2DArray _GoboLUT;
-#else
-    Texture2D _GoboTex;
-    Texture2D _GoboLUT;
-#endif
 
 SamplerState _SamplerClampLinear;
 Texture2D _GrabTexture;
@@ -132,22 +124,22 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
     return result;
 }
 
-BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float hotness)
+BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamHotness)
 {
     BeamData beam = (BeamData)0;
     
-    beam.angleX = angleX;
-    beam.angleY = angleY;
+    beam.zoomX = zoomX;
+    beam.zoomY = zoomY;
 
-    float frustumNearZ = (nearRadius / max(beam.angleX, beam.angleY));
-    float frustumFarZ = (nearRadius / max(beam.angleX, beam.angleY)) + farz;
-    float frustumOffset = -(nearRadius / max(beam.angleX, beam.angleY)) + offset;
+    float frustumNearZ = (nearRadius / max(beam.zoomX, beam.zoomY));
+    float frustumFarZ = (nearRadius / max(beam.zoomX, beam.zoomY)) + farz;
+    float frustumOffset = -(nearRadius / max(beam.zoomX, beam.zoomY)) + offset;
     
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(frustumNearZ, frustumFarZ, t);
-    beam.vertex.x *= beam.vertex.z * beam.angleX * 2;
-    beam.vertex.y *= beam.vertex.z * beam.angleY * 2;
+    beam.vertex.x *= beam.vertex.z * beam.zoomX * 2;
+    beam.vertex.y *= beam.vertex.z * beam.zoomY * 2;
     beam.vertex.z += frustumOffset;
 
     float3 forward = float3(0, 0, -1);
@@ -156,42 +148,55 @@ BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, f
 
     // Shader-based rotation and position offsets should probably go here!
     // Since you're digging here, you probably already know what you are doing, so who am I to say things x>
-    float3 pos = 0; 
-    //float goboSpin = _Time.g;
-    //float tilt = _Time.g;
-    //float pan = _Time.g;
-    //float2x2 spinMatrix = {
-    //    cos(goboSpin), -sin(goboSpin),
-    //    sin(goboSpin),  cos(goboSpin)
-    //};
-    //float2x2 tiltMatrix = {
-    //    cos(tilt), -sin(tilt),
-    //    sin(tilt),  cos(tilt)
-    //};
-    //float2x2 panMatrix = {
-    //    cos(pan), -sin(pan),
-    //    sin(pan),  cos(pan)
-    //};
-    //beam.vertex.xy = mul(beam.vertex.xy, spinMatrix);
-    //beam.vertex.yz = mul(beam.vertex.yz, tiltMatrix);
-    //beam.vertex.xy = mul(beam.vertex.xy, panMatrix);
-    // 
-    //forward.xy = mul(forward.xy, spinMatrix);
-    //forward.yz = mul(forward.yz, tiltMatrix);
-    //forward.xy = mul(forward.xy, panMatrix);
-    //right.xy = mul(right.xy, spinMatrix);
-    //right.yz = mul(right.yz, tiltMatrix);
-    //right.xy = mul(right.xy, panMatrix);
-    //up.xy = mul(up.xy, spinMatrix);
-    //up.yz = mul(up.yz, tiltMatrix);
-    //up.xy = mul(up.xy, panMatrix);
+    float3 positionOffset = 0;
+
+#if LUTBEAM_CALLBACK_TRANSFORM
+    float3x3 rotation = LUTBeamCallbackTransform(beam.vertex, positionOffset);
+    beam.vertex = mul(beam.vertex, rotation);
+    forward = mul(forward, rotation);
+    right = mul(right, rotation);
+    up = mul(up, rotation);
+    // Example
+    //float3x3 LUTBeamTransform(float3 vertex, inout float3 offset)
+    //{
+    //    float goboSpin = _Time.g;
+    //    float tilt = _Time.g;
+    //    float pan = _Time.g;
+    //
+    //    float3x3 spinMatrix3 = float3x3(
+    //        cos(goboSpin), -sin(goboSpin), 0,
+    //        sin(goboSpin),  cos(goboSpin), 0,
+    //        0,              0,             1
+    //    );
+    //
+    //    float3x3 tiltMatrix3 = float3x3(
+    //        1, 0,           0,
+    //        0, cos(tilt), -sin(tilt),
+    //        0, sin(tilt),  cos(tilt)
+    //    );
+    //
+    //    float3x3 panMatrix3 = float3x3(
+    //        cos(pan), -sin(pan), 0,
+    //        sin(pan),  cos(pan), 0,
+    //        0,         0,        1
+    //    );
+    //
+    //    float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
+    //
+    //    offset = float3(cos(_Time.g), 0, sin(_Time.g)) * 5;
+    //
+    //    return combined;
+    //}
+#else
+
+#endif
 
     forward = normalize(mul(unity_ObjectToWorld, float4(forward, 0)).xyz);
     right = normalize(mul(unity_ObjectToWorld, float4(right, 0)).xyz);
     up = normalize(mul(unity_ObjectToWorld, float4(up, 0)).xyz);
     
     float3 worldPos = mul(ObjectToWorld_NoScale(), beam.vertex);
-    worldPos.xyz += pos;
+    worldPos.xyz += positionOffset;
     beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
 
     beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
@@ -199,7 +204,7 @@ BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, f
     float3 apex = mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz;
     apex -= forward * frustumOffset;
     
-    apex += pos;
+    apex += positionOffset;
 
     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     beam.frustumNearZ  = frustumNearZ;
@@ -222,7 +227,7 @@ BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, f
     
     float e = 0.01;
     float Aa = 1.0 + e;
-    float p = hotness + 1e-4;
+    float p = beamHotness + 1e-4;
     float3 q = float3(1.0, 2.0, 3.0) - p;
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
@@ -237,10 +242,10 @@ BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, f
     testCam = WorldToFrustumPosition(apex, forward, right, up, testCam);
 
     float inside = min(min(
-        min(-dot(normalize(float3( 1, 0, beam.angleX)), testCam),
-            -dot(normalize(float3(-1, 0, beam.angleX)), testCam)),
-        min(-dot(normalize(float3( 0,-1, beam.angleY)), testCam),
-            -dot(normalize(float3( 0, 1, beam.angleY)), testCam))),
+        min(-dot(normalize(float3( 1, 0, beam.zoomX)), testCam),
+            -dot(normalize(float3(-1, 0, beam.zoomX)), testCam)),
+        min(-dot(normalize(float3( 0,-1, beam.zoomY)), testCam),
+            -dot(normalize(float3( 0, 1, beam.zoomY)), testCam))),
         min(-frustumNearZ - testCam.z,
                 frustumFarZ  + testCam.z));
 
@@ -258,7 +263,7 @@ BeamData LUTBeamVert(float4 vertexPos, float angleX, float angleY, float farz, f
                                     c & 2 ? 0.5 : -0.5,
                                     c & 4 ? 1.0 : 0.0);
             float  cz = lerp(frustumNearZ, frustumFarZ, corner.z);
-            float3 p  = float3(corner.x * (cz * beam.angleX * 2), corner.y * (cz * beam.angleY * 2),  cz + frustumOffset);
+            float3 p  = float3(corner.x * (cz * beam.zoomX * 2), corner.y * (cz * beam.zoomY * 2),  cz + frustumOffset);
             float3 cw = mul(ObjectToWorld_NoScale(), float4(p, 1)).xyz;
 
             #if defined(USING_STEREO_MATRICES)
@@ -309,26 +314,30 @@ float Bayer2(float2 a) { a = floor(a); return frac(a.x * 0.5 + a.y * a.y * 0.75)
 float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
 float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
-float3 MagicSample(float2 start, float2 end, int gobo, bool colorEnabled, float2 pixel)
+float3 MagicSample(float2 start, float2 end, float2 pixel)
 {
-#if 0
+#if 1
     float tex_size = start_size * end_size;
 
-    float2 posF          = saturate(end) * (end_size - 1);
-    float2 cell          = min(floor(posF), end_size - 2);
+    float2 posF          = saturate(start) * (start_size - 1);
+    float2 cell          = min(floor(posF), start_size - 2);
     float2 chunkblend    = posF - cell;
     float2 chunkblendInv = 1 - chunkblend;
-    float2 chunk         = cell * start_size;
+    float2 chunk         = cell * end_size;
     
-    float2 base = chunk + clamp(start * (start_size - 1), 0, start_size - 1) + 0.5;
+    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
     
-    float s0 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        0))        / tex_size, gobo), 0).r;
-    float s1 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, 0))        / tex_size, gobo), 0).r;
-    float s2 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        start_size)) / tex_size, gobo), 0).r;
-    float s3 = _GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, start_size)) / tex_size, gobo), 0).r;
+#if LUTBEAM_CALLBACK_VOLUME
+    float s0 = LUTBeamCallbackVolume(_SamplerClampLinear, (base) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        0))        / tex_size, gobo), 0).r;
+    float s1 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, 0)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, 0))        / tex_size, gobo), 0).r;
+    float s2 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        start_size)) / tex_size, gobo), 0).r;
+    float s3 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, start_size)) / tex_size, gobo), 0).r;
     
     return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
          + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+#else
+    return 1;
+#endif
 #else
 
     // I realized I can sample just once, the angular resolution will look dithery
@@ -336,23 +345,24 @@ float3 MagicSample(float2 start, float2 end, int gobo, bool colorEnabled, float2
     // in case people get upset
     float tex_size = start_size * end_size;
     float2 n = float2(Bayer4(pixel), Bayer4(pixel.yx + 31.0));
-    float2 posF  = saturate(end) * (end_size - 1);
+    float2 posF  = saturate(start) * (start_size - 1);
     float2 cell  = floor(posF + n);
-    float2 chunk = cell * start_size;
+    float2 chunk = cell * end_size;
 
-    float2 base = chunk + clamp(start * (start_size - 1), 0, start_size - 1) + 0.5;
+    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
+    
 
-#if GOBO_ARRAY
-    float3 result = _GoboLUT.SampleLevel(_SamplerClampLinear, float3(base / tex_size, gobo), 0).rgb;
+
+
+#if LUTBEAM_CALLBACK_VOLUME
+    return LUTBeamCallbackVolume(_SamplerClampLinear, base / tex_size);
 #else
-    float3 result = _GoboLUT.SampleLevel(_SamplerClampLinear, base / tex_size, 0).rgb;
+    return 1;
 #endif
-
-    return colorEnabled ? result : result.rrr;
 #endif
 }
 
-float3 LUTBeamFrag(BeamData beam, int goboInput, bool colorEnabled, float hotness)
+float3 LUTBeamFrag(BeamData beam, float beamHotness)
 {
     float frustumNearZ = beam.frustumNearZ;
     float frustumFarZ = beam.frustumFarZ;
@@ -371,10 +381,10 @@ float3 LUTBeamFrag(BeamData beam, int goboInput, bool colorEnabled, float hotnes
     float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
     float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
 
-    float4 leftPlane   = float4((float3( 1, 0, beam.angleX)), 0);
-    float4 rightPlane  = float4((float3(-1, 0, beam.angleX)), 0);
-    float4 bottomPlane = float4((float3( 0,-1, beam.angleY)), 0);
-    float4 topPlane    = float4((float3( 0, 1, beam.angleY)), 0);
+    float4 leftPlane   = float4((float3( 1, 0, beam.zoomX)), 0);
+    float4 rightPlane  = float4((float3(-1, 0, beam.zoomX)), 0);
+    float4 bottomPlane = float4((float3( 0,-1, beam.zoomY)), 0);
+    float4 topPlane    = float4((float3( 0, 1, beam.zoomY)), 0);
     float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
     float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
     
@@ -426,10 +436,10 @@ float3 LUTBeamFrag(BeamData beam, int goboInput, bool colorEnabled, float hotnes
     float3 entryNormalized = entryPos.yzx;
     float3 exitNormalized = exitPos.yzx;
     
-    entryNormalized.xy /= float2(beam.angleX, beam.angleY) * entryNormalized.z * 2;
+    entryNormalized.xy /= float2(beam.zoomX, beam.zoomY) * entryNormalized.z * 2;
     entryNormalized.xy = entryNormalized.xy + 0.5;
 
-    exitNormalized.xy /= float2(beam.angleX, beam.angleY) * exitNormalized.z * 2;
+    exitNormalized.xy /= float2(beam.zoomX, beam.zoomY) * exitNormalized.z * 2;
     exitNormalized.xy = exitNormalized.xy + 0.5;
 
     float t = 0;
@@ -447,33 +457,31 @@ float3 LUTBeamFrag(BeamData beam, int goboInput, bool colorEnabled, float hotnes
 
     // Normalize to 0-1
     t = saturate(inverselerp(frustumNearZ-0.06, frustumFarZ, distToSource + frustumNearZ));
-
-    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -hotness);
+    
+    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamHotness);
+    float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
     float3 volColor = volFac * beam.colorVolume * beam.hotNorm;
 
     // early out if the fade would kill the anyways
     if(volFac < 0.001)
         discard;
 
-    col = MagicSample(entryNormalized.xy, exitNormalized.xy, goboInput, colorEnabled, beam.vertex.xy);
+    col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy);
 
     col *= volColor;
 
     // gobo on the surface
-    if(hit && beam.colorGobo.r > 0 && beam.colorGobo.g > 0 && beam.colorGobo.b > 0)
+    if(hit && any(beam.colorGobo))
     {
-#if GOBO_ARRAY
-        float3 goboResult = _GoboTex.SampleLevel(_SamplerClampLinear, float3(exitNormalized.xy, goboInput), 0).rgb;
+#if LUTBEAM_CALLBACK_GOBO
+        float3 goboResult = LUTBeamCallbackGobo(_SamplerClampLinear, exitNormalized.xy);
 #else
-        float3 goboResult = _GoboTex.SampleLevel(_SamplerClampLinear, exitNormalized.xy, 0).rgb;
+        float3 goboResult = 1;
 #endif
-        if(!colorEnabled)
-            goboResult = goboResult.rrr;
-
         // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
-        if(goboResult.r > 0 || goboResult.g > 0 || goboResult.b > 0)
+        if(any(goboResult))
         {
-            goboResult *= volFac * beam.colorGobo * beam.hotNorm;
+            goboResult *= volFacNotHot * beam.colorGobo;
 
             float4 grab = _GrabTexture.SampleLevel(_SamplerClampLinear, suv, 0);
             col += grab.rgb * goboResult;

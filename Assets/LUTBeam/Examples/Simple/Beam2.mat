@@ -41,6 +41,7 @@ Material:
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _BeamHotness: 1
     - _BeamIntensity: 1
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
@@ -58,7 +59,7 @@ Material:
     - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.144
+    - _NearRadius: 0.05
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90

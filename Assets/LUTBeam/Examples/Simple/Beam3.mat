@@ -38,9 +38,10 @@ Material:
     m_Ints: []
     m_Floats:
     - _: 1
-    - _Angle: 0.341
+    - _Angle: 0.088
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _BeamHotness: 1
     - _BeamIntensity: 1
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
@@ -53,12 +54,12 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
-    - _Gobo: 2.15
+    - _Gobo: -10.73
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.144
+    - _NearRadius: 0.151
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90

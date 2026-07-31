@@ -3,7 +3,7 @@
 // Optimizations by ValueFactory
 // Tweaks and MDMX integration by Micca
 
-Shader "LUTBeam/GoboLookupGenerator"{
+Shader "LUTBeam/GoboLookupGenerator" {
     Properties
     {
         _MainTex ("_MainTex", 2D) = "white" {}
@@ -63,15 +63,15 @@ Shader "LUTBeam/GoboLookupGenerator"{
             {
                 if(_Fast > 0.5)
                 {
-                    //float2 tile   = floor(input.uv * start_size);
-                    //float2 inTile = frac(input.uv * start_size);
-                    //float2 start = tile / (start_size - 1.0);
-                    //float2 end   = (inTile * end_size - 0.5) / (end_size - 1.0);
+                    float2 tile   = floor(input.uv * start_size);
+                    float2 inTile = frac(input.uv * start_size);
+                    float2 start = tile / (start_size - 1.0);
+                    float2 end   = (inTile * end_size - 0.5) / (end_size - 1.0);
 
-                    float2 tile   = floor(input.uv * end_size);
-                    float2 inTile = frac(input.uv * end_size);
-                    float2 end   = tile / (end_size - 1.0);
-                    float2 start = (inTile * start_size - 0.5) / (start_size - 1.0);
+                    //float2 tile   = floor(input.uv * end_size);
+                    //float2 inTile = frac(input.uv * end_size);
+                    //float2 end   = tile / (end_size - 1.0);
+                    //float2 start = (inTile * start_size - 0.5) / (start_size - 1.0);
 
                     float4 result = 0;
                     for (int i = 0; i < _StepCount; i++)
@@ -89,12 +89,12 @@ Shader "LUTBeam/GoboLookupGenerator"{
                 }
                 else
                 {
-                    //uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
-                    //uint2 posIdx = texel / (uint)end_size;
-                    //uint2 dirIdx = texel % (uint)end_size;
                     uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
-                    uint2 dirIdx = texel / (uint)start_size;   // outer tile = end
-                    uint2 posIdx = texel % (uint)start_size;   // within tile = start
+                    uint2 posIdx = texel / (uint)end_size;
+                    uint2 dirIdx = texel % (uint)end_size;
+                    //uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
+                    //uint2 dirIdx = texel / (uint)start_size;   // outer tile = end
+                    //uint2 posIdx = texel % (uint)start_size;   // within tile = start
 
                     float2 start = posIdx / (start_size - 1.0);
                     float2 end   = dirIdx / (end_size   - 1.0);

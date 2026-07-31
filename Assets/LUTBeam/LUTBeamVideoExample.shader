@@ -1,28 +1,23 @@
-// I dedicate this work to the public domain. Do as you will.
-// Initial implementation by Torvid
-// Optimizations by ValueFactory
-// Tweaks and MDMX integration by Micca
-
 Shader "LUTBeam/VideoExample"
 {
     Properties
     {
-        [NoScaleOffset] _GoboTex ("Gobo Array", 2D) = "white" {}
-        [NoScaleOffset] _GoboLUT ("LUT Array", 2D) = "white" {}
+        [NoScaleOffset] _GoboTex ("Gobo Texture", 2D) = "white" {}
+        [NoScaleOffset] _GoboLUT ("LUT Texture", 2D) = "white" {}
         
         [Header(Shape)]
-        _AngleX ("_AngleX", Range(0, 2.0)) = 0.1
-        _AngleY ("_AngleY", Range(0, 2.0)) = 0.1
+        _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
+        _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearRadius ("_NearRadius", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("_Gobo", Float) = 0
-            
+        
         [Header(Color)]
-        _Color ("Emission Color", Color) = (1, 1, 1, 1)
+        _Color ("Color", Color) = (1, 1, 1, 1)
         _BeamIntensity ("_BeamIntensity", Range(0, 4.0)) = 1
+        _BeamHotness ("_BeamHotness", Range(0, 3.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 4.0)) = 1
-        _Hotness ("_Hotness", Range(0, 3.0)) = 1
     }
     SubShader
     {
@@ -34,6 +29,7 @@ Shader "LUTBeam/VideoExample"
         ZTest LEqual
         ZWrite Off
 
+
         Pass
         {
             Name "LUTBeam"
@@ -43,6 +39,28 @@ Shader "LUTBeam/VideoExample"
             #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
+            Texture2D _GoboTex;
+            Texture2D _GoboLUT;
+            float _Offset;
+            float _NearRadius;
+            float _FarZ;
+            float _ZoomX;
+            float _ZoomY;
+            float4 _Color;
+            float _GoboIntensity;
+            float _BeamIntensity;
+            float _BeamHotness;
+
+            #define LUTBEAM_CALLBACK_GOBO 1
+            float3 LUTBeamCallbackGobo(SamplerState samp, float2 uv)
+            {
+                return _GoboTex.SampleLevel(samp, uv, 0).rgb;
+            }
+            #define LUTBEAM_CALLBACK_VOLUME 1
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            {
+                return _GoboLUT.SampleLevel(samp, uv, 0).rgb;
+            }
             #include "LUTBeam.cginc"
         
             #pragma vertex vert
@@ -63,16 +81,6 @@ Shader "LUTBeam/VideoExample"
                 UNITY_VERTEX_OUTPUT_STEREO
             };
             
-            float _Offset;
-            float _NearRadius;
-            float _FarZ;
-            float _AngleX;
-            float _AngleY;
-            float4 _Color;
-            float _GoboIntensity;
-            float _BeamIntensity;
-            float _Hotness;
-
             v2f vert(appdata v)
             {
                 v2f o;
@@ -81,7 +89,7 @@ Shader "LUTBeam/VideoExample"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.beam = LUTBeamVert(v.vertex, _AngleX, _AngleY, _FarZ, _NearRadius, _Offset, _Color, _BeamIntensity, _GoboIntensity, _Hotness);
+                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearRadius, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamHotness);
 
                 return o;
             }
@@ -91,7 +99,7 @@ Shader "LUTBeam/VideoExample"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
 
-                float3 col = LUTBeamFrag(i.beam, 0, true, _Hotness);
+                float3 col = LUTBeamFrag(i.beam, _BeamHotness);
                 return float4(col, 0);
             }
             ENDCG
