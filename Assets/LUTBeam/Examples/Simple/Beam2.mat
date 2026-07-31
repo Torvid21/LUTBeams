@@ -41,8 +41,8 @@ Material:
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamHotness: 1
-    - _BeamIntensity: 1
+    - _BeamHotness: 0
+    - _BeamIntensity: 8
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -54,13 +54,13 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
-    - _Gobo: 4.66
+    - _Gobo: 3.92
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 1
+    - _GoboIntensity: 0
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.05
-    - _Offset: 0
+    - _NearRadius: 0.323
+    - _Offset: 0.15
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90

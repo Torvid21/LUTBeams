@@ -1,4 +1,6 @@
 # LUTBeams
+Still a bit work inprogress! fixing bugs and stuff ^^
+
 Volumetric light beams for VRChat. As seen in **Furality** and **Stage Flight**.
 
 Example uses:

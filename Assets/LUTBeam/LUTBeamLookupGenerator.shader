@@ -57,7 +57,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
                 return o;
             }
 
-            #define Supersample 4
+            #define Supersample 1
 
             float4 frag (v2f input) : SV_Target
             {
@@ -82,7 +82,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
                         result += tex2Dlod(_MainTex, float4(pos, 0, 0)) * tex2Dlod(_Mask, float4(pos, 0, 0)) * !any(pos - saturate(pos));
                     }
                     result /= _StepCount;
-                    result *= distance(start, end);
+                    //result *= distance(start, end);
                     result.a = 1;
                 
                     return result;
@@ -101,12 +101,12 @@ Shader "LUTBeam/GoboLookupGenerator" {
 
                     float2 startPixelSize = 1.0 / (start_size - 1.0);
                     float2 endPixelSize   = 1.0 / (end_size   - 1.0);
-                    
-                    float4 result = 0;
 
-                    // Supersample, sweeping lots rays that fit the two pixels instead of just one
-                    // Not completely accurate since at render-time, it's a frustum, while this is orthographic
-                    // but massively improves how it looks so... good.
+                    float2 startScale = saturate(min(start, 1 - start) / (0.5 * startPixelSize));
+                    float2 endScale = saturate(min(end,   1 - end)   / (0.5 * endPixelSize));
+
+                    float4 result = 0;
+                    
                     [loop]
                     for (int sx = 0; sx < Supersample; sx++)
                     {
@@ -119,31 +119,32 @@ Shader "LUTBeam/GoboLookupGenerator" {
                                 [loop]
                                 for (int ey = 0; ey < Supersample; ey++)
                                 {
-                                    float2 startOffset = (float2(sx, sy) + 0.5) / Supersample - 0.5;
-                                    float2 endOffset   = (float2(ex, ey) + 0.5) / Supersample - 0.5;
-
-                                    float2 newStart = clamp(start + startOffset * startPixelSize, 0, 1);
-                                    float2 newEnd   = clamp(end   + endOffset   * endPixelSize,   0, 1);
-
-                                    [loop]
-                                    for (int i = 0; i < _StepCount; i++)
                                     {
-                                        float t = i / (_StepCount - 1);
-                                        float2 pos = lerp(newStart, newEnd, t);
-                                        pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
-                                        result += tex2Dlod(_MainTex, float4(pos, 0, 0)) * tex2Dlod(_Mask, float4(pos, 0, 0)) * !any(pos - saturate(pos));
+                                        float2 startOffset = (float2(sx, sy) + 0.5) / Supersample - 0.5;
+                                        float2 endOffset   = (float2(ex, ey) + 0.5) / Supersample - 0.5;
+
+                                        float2 newStart = start + startOffset * startPixelSize * startScale;
+                                        float2 newEnd   = end   + endOffset   * endPixelSize   * endScale;
+
+                                        [loop]
+                                        for (int i = 0; i < _StepCount; i++)
+                                        {
+                                            float t = i / (_StepCount - 1);
+                                            float2 pos = lerp(newStart, newEnd, t);
+                                            pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
+                                            result += tex2Dlod(_MainTex, float4(pos, 0, 0))
+                                                    * tex2Dlod(_Mask,    float4(pos, 0, 0))
+                                                    * !any(pos - saturate(pos));
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-
                     result /= _StepCount * Supersample * Supersample * Supersample * Supersample;
-                    result *= distance(start, end);
                     result.a = 1;
                     return result;
                 }
-                
             }
             ENDCG
         }

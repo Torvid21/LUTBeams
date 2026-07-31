@@ -14,9 +14,9 @@ Shader "LUTBeam/SimpleExample"
             
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
-        _BeamIntensity ("_BeamIntensity", Range(0, 4.0)) = 1
+        _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
         _BeamHotness ("_BeamHotness", Range(0, 3.0)) = 1
-        _GoboIntensity ("_GoboIntensity", Range(0, 4.0)) = 1
+        _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
     }
     SubShader
     {
