@@ -119,7 +119,6 @@ Shader "LUTBeam/GoboLookupGenerator" {
                                 [loop]
                                 for (int ey = 0; ey < Supersample; ey++)
                                 {
-                                    
                                     float2 startOffset = (float2(sx, sy) + 0.5) / Supersample - 0.5;
                                     float2 endOffset   = (float2(ex, ey) + 0.5) / Supersample - 0.5;
 
@@ -136,7 +135,6 @@ Shader "LUTBeam/GoboLookupGenerator" {
                                                 * tex2Dlod(_Mask,    float4(pos, 0, 0))
                                                 * !any(pos - saturate(pos));
                                     }
-                                    
                                 }
                             }
                         }

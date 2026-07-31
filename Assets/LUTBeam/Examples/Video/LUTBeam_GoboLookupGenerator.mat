@@ -35,6 +35,6 @@ Material:
     m_Floats:
     - _AspectRatio: 1
     - _Fast: 1
-    - _StepCount: 16
+    - _StepCount: 32
     m_Colors: []
   m_BuildTextureStacks: []

@@ -10,7 +10,7 @@
 
 struct BeamData
 {
-    // Start texcoords at 32 so they are unlikely to be used by something else.
+    // Start texcoords at 40 so they are unlikely to be used by something else.
     float4 vertex : SV_POSITION;
     float2 screenPosition : TEXCOORD40;
     float zoomX : TEXCOORD41;
@@ -225,6 +225,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.colorGobo = color * brightnessGobo * 1;
     beam.colorVolume = color * brightnessVolume * 0.1;
     
+    // Calculate compensation value to 'normalize' hotness so it doesn't explode to a crazy high value.
     float e = 0.01;
     float Aa = 1.0 + e;
     float p = beamFalloff + 1e-4;
@@ -232,6 +233,12 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
     beam.hotNorm = 3.198 / I;
+
+    if (!any(color) || (brightnessVolume <= 0 && brightnessGobo <= 0))
+    {
+        beam.vertex = 1.0 / 0.0;
+        return beam;
+    }
 
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)

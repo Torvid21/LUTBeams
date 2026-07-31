@@ -41,6 +41,7 @@ Material:
     - _Angle: 0.441
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _BeamFalloff: 1
     - _BeamHotness: 1
     - _BeamIntensity: 1
     - _BrightnessGoboZoomMax: 1

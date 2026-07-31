@@ -44,8 +44,9 @@ Material:
     - _AngleX: 0.528
     - _AngleY: 0.301
     - _AspectRatio: 1
+    - _BeamFalloff: 3
     - _BeamHotness: 1
-    - _BeamIntensity: 1
+    - _BeamIntensity: 1.91
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1

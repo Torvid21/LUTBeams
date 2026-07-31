@@ -41,8 +41,9 @@ Material:
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _BeamFalloff: 1
     - _BeamHotness: 0
-    - _BeamIntensity: 8
+    - _BeamIntensity: 1.17
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -56,7 +57,7 @@ Material:
     - _FarZMaxZoom: 10
     - _Gobo: 3.92
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 0
+    - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.323
@@ -71,7 +72,7 @@ Material:
     - _TiltMin: -90
     - _TiltOffset: 0
     m_Colors:
-    - _Color: {r: 0.6956522, g: 1, b: 0.4673913, a: 1}
+    - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
