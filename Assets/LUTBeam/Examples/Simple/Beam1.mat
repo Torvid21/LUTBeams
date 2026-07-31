@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Beam1
-  m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
+  m_Shader: {fileID: 4800000, guid: 1f82d4a92a7ad7a40a005e40a9c8392a, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: -1
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -35,7 +35,8 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints: []
+    m_Ints:
+    - _Gobo: 7
     m_Floats:
     - _: 1
     - _Angle: 0.441
@@ -55,7 +56,7 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
-    - _Gobo: 8.96
+    - _Gobo: 6.71
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
     - _Hotness: 1
@@ -67,10 +68,12 @@ Material:
     - _PanMin: -90
     - _PanOffset: 0
     - _SpinMult: 4
+    - _SpinSpeed: 0.1
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
+    - _Zoom: 0.46
     m_Colors:
     - _Color: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

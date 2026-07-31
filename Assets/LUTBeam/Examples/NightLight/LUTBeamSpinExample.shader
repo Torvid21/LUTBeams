@@ -1,4 +1,4 @@
-Shader "LUTBeam/SimpleRotate"
+Shader "LUTBeam/SpinExample"
 {
     Properties
     {
@@ -6,17 +6,18 @@ Shader "LUTBeam/SimpleRotate"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Angle ("_Angle", Range(0, 2.0)) = 0.1
+        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearRadius ("_NearRadius", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
-        _Gobo ("_Gobo", Float) = 0
-        
+        _Gobo ("Gobo Index", Integer) = 0
+        _SpinSpeed ("_SpinSpeed", Float) = 0.1
+            
         [Header(Color)]
-        _Color ("Emission Color", Color) = (1, 1, 1, 1)
-        _BeamIntensity ("_BeamIntensity", Range(0, 4.0)) = 1
-        _GoboIntensity ("_GoboIntensity", Range(0, 4.0)) = 1
-        _Hotness ("_Hotness", Range(0, 3.0)) = 1
+        _Color ("Color", Color) = (1, 1, 1, 1)
+        _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
+        _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
+        _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
     }
     SubShader
     {
@@ -43,15 +44,16 @@ Shader "LUTBeam/SimpleRotate"
             float _Offset;
             float _NearRadius;
             float _FarZ;
-            float _Angle;
+            float _Zoom;
             float _Gobo;
             float4 _Color;
             float _GoboIntensity;
             float _BeamIntensity;
-            float _Hotness;
+            float _BeamFalloff;
+            float _SpinSpeed;
                 
-            #define LUTBEAM_CALLBACK_GOBO 1
-            float3 LUTBeamCallbackGobo(SamplerState samp, float2 uv)
+            #define LUTBEAM_CALLBACK_PROJECTION 1
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
@@ -60,8 +62,20 @@ Shader "LUTBeam/SimpleRotate"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
+            
+            #define LUTBEAM_CALLBACK_TRANSFORM 1
+            float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 worldPositionOffset)
+            {
+                float spin = _Time.g*_SpinSpeed;
 
-            #include "LUTBeam.cginc"
+                float3x3 spinMatrix3 = float3x3(
+                    cos(spin), -sin(spin), 0,
+                    sin(spin),  cos(spin), 0,
+                    0,         0,          1
+                );
+                return spinMatrix3;
+            }
+            #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
             #pragma fragment frag
@@ -91,11 +105,11 @@ Shader "LUTBeam/SimpleRotate"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = lerp(1, 0.1, saturate(_Angle*0.5));
+                float zoomFade = lerp(1, 0.1, saturate(_Zoom*0.5));
 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _Angle, _Angle, _FarZ, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _Hotness);
+                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }
@@ -105,7 +119,7 @@ Shader "LUTBeam/SimpleRotate"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                float3 col = LUTBeamFrag(i.beam, _Hotness);
+                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
                 return float4(col, 0);
             }
             ENDCG

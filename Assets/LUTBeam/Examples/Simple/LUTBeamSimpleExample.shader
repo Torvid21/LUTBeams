@@ -6,11 +6,11 @@ Shader "LUTBeam/SimpleExample"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Angle ("_Angle", Range(0, 2.0)) = 0.1
+        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearRadius ("_NearRadius", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
-        _Gobo ("_Gobo", Float) = 0
+        _Gobo ("Gobo Index", Integer) = 0
             
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -43,13 +43,13 @@ Shader "LUTBeam/SimpleExample"
             float _Offset;
             float _NearRadius;
             float _FarZ;
-            float _Angle;
+            float _Zoom;
             float _Gobo;
             float4 _Color;
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
-                
+
             #define LUTBEAM_CALLBACK_PROJECTION 1
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
@@ -60,8 +60,8 @@ Shader "LUTBeam/SimpleExample"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
-
-            #include "LUTBeam.cginc"
+            
+            #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
             #pragma fragment frag
@@ -91,11 +91,11 @@ Shader "LUTBeam/SimpleExample"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = lerp(1, 0.1, saturate(_Angle*0.5));
+                float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(_Zoom*0.5), 5));
 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _Angle, _Angle, _FarZ, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }

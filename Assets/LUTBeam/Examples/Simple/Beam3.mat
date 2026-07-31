@@ -35,12 +35,14 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints: []
+    m_Ints:
+    - _Gobo: 0
     m_Floats:
     - _: 1
-    - _Angle: 0.088
+    - _Angle: 0.012
     - _AngleMax: 0.3
     - _AngleMin: 0.1
+    - _BeamFalloff: 1
     - _BeamHotness: 1
     - _BeamIntensity: 1
     - _BrightnessGoboZoomMax: 1
@@ -70,6 +72,7 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
+    - _Zoom: 0.355
     m_Colors:
     - _Color: {r: 0.34299523, g: 0.5942029, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

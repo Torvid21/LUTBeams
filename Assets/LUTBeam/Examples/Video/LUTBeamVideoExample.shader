@@ -11,7 +11,7 @@ Shader "LUTBeam/VideoExample"
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearRadius ("_NearRadius", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
-        _Gobo ("_Gobo", Float) = 0
+        _Gobo ("Gobo Index", Integer) = 0
         
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -61,7 +61,7 @@ Shader "LUTBeam/VideoExample"
             {
                 return _GoboLUT.SampleLevel(samp, uv, 0).rgb;
             }
-            #include "LUTBeam.cginc"
+            #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
             #pragma fragment frag

@@ -25,7 +25,7 @@ struct BeamData
     float3 colorGobo : TEXCOORD50;
     float3 colorVolume : TEXCOORD51;
     float4 clipPlane : TEXCOORD52;
-    float4 hotNorm : TEXCOORD53;
+    float4 falloffNorm : TEXCOORD53;
 };
 
 float inverselerp(float from, float to, float value)
@@ -128,6 +128,9 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 {
     BeamData beam = (BeamData)0;
     
+    zoomX = max(zoomX, 0.0001);
+    zoomY = max(zoomY, 0.0001);
+
     beam.zoomX = zoomX;
     beam.zoomY = zoomY;
 
@@ -152,10 +155,10 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 
 #if LUTBEAM_CALLBACK_TRANSFORM
     float3x3 rotation = LUTBeamCallbackTransform(beam.vertex, positionOffset);
-    beam.vertex = mul(beam.vertex, rotation);
-    forward = mul(forward, rotation);
-    right = mul(right, rotation);
-    up = mul(up, rotation);
+    beam.vertex.xyz = mul(beam.vertex, rotation).xyz;
+    forward = mul(forward, rotation).xyz;;
+    right = mul(right, rotation).xyz;;
+    up = mul(up, rotation).xyz;;
     // Example
     //float3x3 LUTBeamTransform(float3 vertex, inout float3 offset)
     //{
@@ -225,14 +228,14 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.colorGobo = color * brightnessGobo * 1;
     beam.colorVolume = color * brightnessVolume * 0.1;
     
-    // Calculate compensation value to 'normalize' hotness so it doesn't explode to a crazy high value.
+    // Calculate compensation value to 'normalize' falloff so it doesn't explode to a crazy high value.
     float e = 0.01;
     float Aa = 1.0 + e;
     float p = beamFalloff + 1e-4;
     float3 q = float3(1.0, 2.0, 3.0) - p;
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
-    beam.hotNorm = 3.198 / I;
+    beam.falloffNorm = 3.198 / I;
 
     if (!any(color) || (brightnessVolume <= 0 && brightnessGobo <= 0))
     {
@@ -465,7 +468,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     
     float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
     float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
-    float3 volColor = volFac * beam.colorVolume * beam.hotNorm;
+    float3 volColor = volFac * beam.colorVolume * beam.falloffNorm;
 
     // early out if the fade would kill the anyways
     if(volFac < 0.001)
