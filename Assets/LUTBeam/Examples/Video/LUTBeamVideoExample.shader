@@ -9,7 +9,8 @@ Shader "LUTBeam/VideoExample"
         _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
         _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
-        _NearRadius ("_NearRadius", Range(0,1)) = 0.1
+        _NearRadiusX ("_NearRadiusX", Range(0,1)) = 0.1
+        _NearRadiusY ("_NearRadiusY", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
         
@@ -42,7 +43,8 @@ Shader "LUTBeam/VideoExample"
             Texture2D _GoboTex;
             Texture2D _GoboLUT;
             float _Offset;
-            float _NearRadius;
+            float _NearRadiusX;
+            float _NearRadiusY;
             float _FarZ;
             float _ZoomX;
             float _ZoomY;
@@ -89,10 +91,11 @@ Shader "LUTBeam/VideoExample"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearRadius, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearRadiusX, _NearRadiusY, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }
+
 
             float4 frag(v2f i) : SV_Target
             {

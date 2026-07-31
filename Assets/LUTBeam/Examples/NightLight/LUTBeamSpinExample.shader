@@ -12,7 +12,7 @@ Shader "LUTBeam/SpinExample"
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
         _SpinSpeed ("_SpinSpeed", Float) = 0.1
-            
+        
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
         _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
@@ -109,7 +109,7 @@ Shader "LUTBeam/SpinExample"
 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }

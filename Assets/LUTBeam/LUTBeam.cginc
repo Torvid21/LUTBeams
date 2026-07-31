@@ -26,6 +26,7 @@ struct BeamData
     float3 colorVolume : TEXCOORD51;
     float4 clipPlane : TEXCOORD52;
     float4 falloffNorm : TEXCOORD53;
+    float4 aniso : TEXCOORD54;
 };
 
 float inverselerp(float from, float to, float value)
@@ -124,25 +125,34 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
     return result;
 }
 
-BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadius, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
+BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadiusX, float nearRadiusY, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
 {
     BeamData beam = (BeamData)0;
-    
+
     zoomX = max(zoomX, 0.0001);
     zoomY = max(zoomY, 0.0001);
-
     beam.zoomX = zoomX;
     beam.zoomY = zoomY;
 
-    float frustumNearZ = (nearRadius / max(beam.zoomX, beam.zoomY));
-    float frustumFarZ = (nearRadius / max(beam.zoomX, beam.zoomY)) + farz;
-    float frustumOffset = -(nearRadius / max(beam.zoomX, beam.zoomY)) + offset;
+    float apexDistX = nearRadiusX / zoomX;      // lens-to-apex distance per axis
+    float apexDistY = nearRadiusY / zoomY;
+    float frustumNearZ  = max(apexDistX, apexDistY);
+    float frustumFarZ   = frustumNearZ + farz;
+    float frustumOffset = -frustumNearZ + offset;
+
+    float apexZX = frustumNearZ - apexDistX;    // >= 0, one of them is always 0
+    float apexZY = frustumNearZ - apexDistY;
+    float wX = -zoomX * apexZX;
+    float wY = -zoomY * apexZY;
+    beam.aniso = float4(apexZX, apexZY, wX, wY);
+
+    //beam.clipPlane = float4(0, 0, 0, 1); 
     
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(frustumNearZ, frustumFarZ, t);
-    beam.vertex.x *= beam.vertex.z * beam.zoomX * 2;
-    beam.vertex.y *= beam.vertex.z * beam.zoomY * 2;
+    beam.vertex.x *= (beam.vertex.z - apexZX) * zoomX * 2;
+    beam.vertex.y *= (beam.vertex.z - apexZY) * zoomY * 2;
     beam.vertex.z += frustumOffset;
 
     float3 forward = float3(0, 0, -1);
@@ -156,9 +166,9 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 #if LUTBEAM_CALLBACK_TRANSFORM
     float3x3 rotation = LUTBeamCallbackTransform(beam.vertex, positionOffset);
     beam.vertex.xyz = mul(beam.vertex, rotation).xyz;
-    forward = mul(forward, rotation).xyz;;
-    right = mul(right, rotation).xyz;;
-    up = mul(up, rotation).xyz;;
+    forward = mul(forward, rotation).xyz;
+    right = mul(right, rotation).xyz;
+    up = mul(up, rotation).xyz;
     // Example
     //float3x3 LUTBeamTransform(float3 vertex, inout float3 offset)
     //{
@@ -226,7 +236,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
     
     beam.colorGobo = color * brightnessGobo * 1;
-    beam.colorVolume = color * brightnessVolume * 0.1;
+    float lengthNorm = 1;//1.0 / (2.0 * max(zoomX, zoomY) * frustumFarZ);
+    beam.colorVolume = color * brightnessVolume * 0.1 * lengthNorm;
     
     // Calculate compensation value to 'normalize' falloff so it doesn't explode to a crazy high value.
     float e = 0.01;
@@ -251,13 +262,15 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     #endif
     testCam = WorldToFrustumPosition(apex, forward, right, up, testCam);
 
+    float invLenX = rsqrt(1 + zoomX * zoomX);
+    float invLenY = rsqrt(1 + zoomY * zoomY);
     float inside = min(min(
-        min(-dot(normalize(float3( 1, 0, beam.zoomX)), testCam),
-            -dot(normalize(float3(-1, 0, beam.zoomX)), testCam)),
-        min(-dot(normalize(float3( 0,-1, beam.zoomY)), testCam),
-            -dot(normalize(float3( 0, 1, beam.zoomY)), testCam))),
+        min((wX - dot(float3( 1, 0, zoomX), testCam)) * invLenX,
+            (wX - dot(float3(-1, 0, zoomX), testCam)) * invLenX),
+        min((wY - dot(float3( 0,-1, zoomY), testCam)) * invLenY,
+            (wY - dot(float3( 0, 1, zoomY), testCam)) * invLenY)),
         min(-frustumNearZ - testCam.z,
-                frustumFarZ  + testCam.z));
+             frustumFarZ  + testCam.z));
 
     float margin = 0.25;
     bool useQuad = inside > -margin;
@@ -273,7 +286,9 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
                                     c & 2 ? 0.5 : -0.5,
                                     c & 4 ? 1.0 : 0.0);
             float  cz = lerp(frustumNearZ, frustumFarZ, corner.z);
-            float3 p  = float3(corner.x * (cz * beam.zoomX * 2), corner.y * (cz * beam.zoomY * 2),  cz + frustumOffset);
+            float3 p = float3(corner.x * ((cz - apexZX) * beam.zoomX * 2),
+                              corner.y * ((cz - apexZY) * beam.zoomY * 2),
+                              cz + frustumOffset);
             float3 cw = mul(ObjectToWorld_NoScale(), float4(p, 1)).xyz;
 
             #if defined(USING_STEREO_MATRICES)
@@ -389,10 +404,10 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
     float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
 
-    float4 leftPlane   = float4((float3( 1, 0, beam.zoomX)), 0);
-    float4 rightPlane  = float4((float3(-1, 0, beam.zoomX)), 0);
-    float4 bottomPlane = float4((float3( 0,-1, beam.zoomY)), 0);
-    float4 topPlane    = float4((float3( 0, 1, beam.zoomY)), 0);
+    float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
+    float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
+    float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
+    float4 topPlane    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
     float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
     float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
     
@@ -430,7 +445,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         entryDistance = min(entryDistance, SceneDistance);
         exitDistance = min(exitDistance, SceneDistance);
     }
-
+    
     if(exitDistance - entryDistance < 0.01)
         discard;
     
@@ -444,10 +459,13 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     float3 entryNormalized = entryPos.yzx;
     float3 exitNormalized = exitPos.yzx;
     
-    entryNormalized.xy /= float2(beam.zoomX, beam.zoomY) * entryNormalized.z * 2;
+    
+    entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
+    entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
     entryNormalized.xy = entryNormalized.xy + 0.5;
 
-    exitNormalized.xy /= float2(beam.zoomX, beam.zoomY) * exitNormalized.z * 2;
+    exitNormalized.x /= (exitNormalized.z - beam.aniso.x) * beam.zoomX * 2;
+    exitNormalized.y /= (exitNormalized.z - beam.aniso.y) * beam.zoomY * 2;
     exitNormalized.xy = exitNormalized.xy + 0.5;
 
     float t = 0;
@@ -475,6 +493,9 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         discard;
 
     col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy);
+
+    // more correct but dosen't look good ??
+    //col *= (exitDistance - entryDistance);
 
     col *= volColor;
 

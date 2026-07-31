@@ -35,7 +35,8 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
-    m_Ints: []
+    m_Ints:
+    - _Gobo: 0
     m_Floats:
     - _: 1
     - _Angle: 0.341
@@ -56,14 +57,16 @@ Material:
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
-    - _FarZ: 25
+    - _FarZ: 50.35
     - _FarZMaxZoom: 10
     - _Gobo: 2.15
     - _GoboColorEnabled: 1
-    - _GoboIntensity: 2.58
+    - _GoboIntensity: 1.8
     - _Hotness: 1.94
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.038
+    - _NearRadiusX: 0.1
+    - _NearRadiusY: 0.05625
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
@@ -74,8 +77,9 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
+    - _Zoom: 0.28
     - _ZoomX: 0.48
-    - _ZoomY: 0.268
+    - _ZoomY: 0.306
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

@@ -61,7 +61,7 @@ Material:
     - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.323
+    - _NearRadius: 0.187
     - _Offset: 0.15
     - _Pan: 0
     - _PanMax: 90
@@ -73,6 +73,8 @@ Material:
     - _TiltMin: -90
     - _TiltOffset: 0
     - _Zoom: 0.291
+    - _ZoomX: 0.1
+    - _ZoomY: 0.1
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
