@@ -327,17 +327,18 @@ float3 MagicSample(float2 start, float2 end, float2 pixel)
     
     float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
     
-#if LUTBEAM_CALLBACK_VOLUME
-    float s0 = LUTBeamCallbackVolume(_SamplerClampLinear, (base) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        0))        / tex_size, gobo), 0).r;
-    float s1 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, 0)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, 0))        / tex_size, gobo), 0).r;
-    float s2 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        start_size)) / tex_size, gobo), 0).r;
-    float s3 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, start_size)) / tex_size, gobo), 0).r;
+    #if LUTBEAM_CALLBACK_VOLUME
+        float s0 = LUTBeamCallbackVolume(_SamplerClampLinear, (base) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        0))        / tex_size, gobo), 0).r;
+        float s1 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, 0)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, 0))        / tex_size, gobo), 0).r;
+        float s2 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(0,        start_size)) / tex_size, gobo), 0).r;
+        float s3 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);//_GoboLUT.SampleLevel(_SamplerClampLinear, float3((base + float2(start_size, start_size)) / tex_size, gobo), 0).r;
     
-    return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
-         + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
-#else
-    return 1;
-#endif
+        return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
+             + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+    #else
+        return 1;
+    #endif
+
 #else
 
     // I realized I can sample just once, the angular resolution will look dithery
@@ -350,15 +351,12 @@ float3 MagicSample(float2 start, float2 end, float2 pixel)
     float2 chunk = cell * end_size;
 
     float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-    
 
-
-
-#if LUTBEAM_CALLBACK_VOLUME
-    return LUTBeamCallbackVolume(_SamplerClampLinear, base / tex_size);
-#else
-    return 1;
-#endif
+    #if LUTBEAM_CALLBACK_VOLUME
+        return LUTBeamCallbackVolume(_SamplerClampLinear, base / tex_size);
+    #else
+        return 1;
+    #endif
 #endif
 }
 
