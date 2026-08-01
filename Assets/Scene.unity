@@ -2399,7 +2399,12 @@ PrefabInstance:
         type: 3}
       propertyPath: gobos.Array.data[0]
       value: 
-      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
+      objectReference: {fileID: 2800000, guid: 22710d1a3657c9e41a6486308791d140, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: gobos.Array.data[7]
+      value: 
+      objectReference: {fileID: 2800000, guid: b508d1c02a80fea418b31c750ed8c072, type: 3}
     - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
         type: 3}
       propertyPath: gobos.Array.data[8]
