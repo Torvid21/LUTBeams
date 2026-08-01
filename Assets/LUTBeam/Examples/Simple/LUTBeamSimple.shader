@@ -6,8 +6,10 @@ Shader "LUTBeam/Simple"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
-        _NearRadius ("_NearRadius", Range(0,1)) = 0.1
+        _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
+        _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
+        _NearSizeX ("_NearSizeX", Range(0,2)) = 0.1
+        _NearSizeY ("_NearSizeY", Range(0,2)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
@@ -41,9 +43,11 @@ Shader "LUTBeam/Simple"
             Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
-            float _NearRadius;
+            float _ZoomX;
+            float _ZoomY;
+            float _NearSizeX;
+            float _NearSizeY;
             float _FarZ;
-            float _Zoom;
             float _Gobo;
             float4 _Color;
             float _GoboIntensity;
@@ -95,7 +99,7 @@ Shader "LUTBeam/Simple"
 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }

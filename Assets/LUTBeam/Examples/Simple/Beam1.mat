@@ -62,6 +62,10 @@ Material:
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.144
+    - _NearRadiusX: 0.1
+    - _NearRadiusY: 0.1
+    - _NearSizeX: 0.1
+    - _NearSizeY: 0.1
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
@@ -74,6 +78,8 @@ Material:
     - _TiltMin: -90
     - _TiltOffset: 0
     - _Zoom: 0.5
+    - _ZoomX: 0.3
+    - _ZoomY: 0.3
     m_Colors:
     - _Color: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

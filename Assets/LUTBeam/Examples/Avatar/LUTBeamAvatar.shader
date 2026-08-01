@@ -6,7 +6,7 @@ Shader "LUTBeam/Avatar"
 
         [Header(Shape)]
         _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
-        _NearRadius ("_NearRadius", Range(0,1)) = 0.1
+        _NearSize ("_NearSize", Range(0,1)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
@@ -39,7 +39,7 @@ Shader "LUTBeam/Avatar"
 
             Texture2DArray _GoboLUT;
             float _Offset;
-            float _NearRadius;
+            float _NearSize;
             float _FarZ;
             float _Zoom;
             float _Gobo;
@@ -92,7 +92,7 @@ Shader "LUTBeam/Avatar"
 
                 float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(_Zoom*0.5), 5));
 
-                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearRadius, _NearRadius, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _Zoom, _Zoom, _FarZ, _NearSize, _NearSize, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
 
                 return o;
             }

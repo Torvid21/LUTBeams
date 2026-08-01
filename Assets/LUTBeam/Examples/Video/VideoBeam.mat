@@ -47,7 +47,7 @@ Material:
     - _AspectRatio: 1
     - _BeamFalloff: 3
     - _BeamHotness: 1
-    - _BeamIntensity: 2
+    - _BeamIntensity: 1
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -67,6 +67,8 @@ Material:
     - _NearRadius: 0.038
     - _NearRadiusX: 0.1
     - _NearRadiusY: 0.05625
+    - _NearSizeX: 0.1
+    - _NearSizeY: 0.1
     - _Offset: 0.23
     - _Pan: 0
     - _PanMax: 90

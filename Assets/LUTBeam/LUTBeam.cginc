@@ -125,7 +125,7 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
     return result;
 }
 
-BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadiusX, float nearRadiusY, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
+BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearSizeX, float nearSizeY, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
 {
     BeamData beam = (BeamData)0;
     
@@ -140,8 +140,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.zoomX = zoomX;
     beam.zoomY = zoomY;
 
-    float apexDistX = nearRadiusX / zoomX;      // lens-to-apex distance per axis
-    float apexDistY = nearRadiusY / zoomY;
+    float apexDistX = nearSizeX / zoomX;      // lens-to-apex distance per axis
+    float apexDistY = nearSizeY / zoomY;
     float frustumNearZ  = max(apexDistX, apexDistY);
     float frustumFarZ   = frustumNearZ + farz;
     float frustumOffset = -frustumNearZ + offset;
@@ -511,5 +511,4 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     }
 
     return float4(col, 1);
-    
 }

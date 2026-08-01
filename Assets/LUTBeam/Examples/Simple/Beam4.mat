@@ -1,0 +1,86 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Beam4
+  m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 1
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: 3000
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _GoboLUT:
+        m_Texture: {fileID: 18700000, guid: d7b0aa7faf19c524a9b8555556705094, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _GoboTex:
+        m_Texture: {fileID: 18700000, guid: 56dc3461f5bb5524ba605eb0a6c077a1, type: 2}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _Shadows:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints:
+    - _Gobo: 0
+    m_Floats:
+    - _: 1
+    - _Angle: 0.012
+    - _AngleMax: 0.3
+    - _AngleMin: 0.1
+    - _BeamFalloff: 3
+    - _BeamHotness: 1
+    - _BeamIntensity: 0.19
+    - _BrightnessGoboZoomMax: 1
+    - _BrightnessGoboZoomMin: 1
+    - _BrightnessVolumeZoomMax: 1
+    - _BrightnessVolumeZoomMin: 1
+    - _DMXChannel: -1
+    - _DMXMotionChannel: -1
+    - _FadeDist: 1
+    - _FadeMult: 1
+    - _Falloff: 0
+    - _FarZ: 100
+    - _FarZMaxZoom: 10
+    - _Gobo: -10.73
+    - _GoboColorEnabled: 0
+    - _GoboIntensity: 1
+    - _Hotness: 1
+    - _LUTBeamShadowIndex: 0
+    - _NearRadius: 0.066
+    - _NearRadiusX: 1
+    - _NearRadiusY: 0.1
+    - _NearSizeX: 2
+    - _NearSizeY: 0.1
+    - _Offset: 0
+    - _Pan: 0
+    - _PanMax: 90
+    - _PanMin: -90
+    - _PanOffset: 0
+    - _SpinMult: 4
+    - _Tilt: 0
+    - _TiltMax: 90
+    - _TiltMin: -90
+    - _TiltOffset: 0
+    - _Zoom: 0.07
+    - _ZoomX: 0.32
+    - _ZoomY: 0
+    m_Colors:
+    - _Color: {r: 0.34299523, g: 0.5942029, b: 1, a: 1}
+    - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
+    - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
+  m_BuildTextureStacks: []
