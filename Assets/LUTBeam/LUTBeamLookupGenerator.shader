@@ -9,7 +9,6 @@ Shader "LUTBeam/GoboLookupGenerator" {
         _MainTex ("_MainTex", 2D) = "white" {}
         _Mask ("_Mask", 2D) = "white" {}
         _StepCount ("_StepCount", Float) = 64
-        _Fast ("_Fast", Float) = 0
         _AspectRatio ("_AspectRatio", Float) = 1
     }
     SubShader
@@ -44,7 +43,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
             sampler2D _Mask;
             float4 _MainTex_ST;
 
-            float _Fast;
+            float _Supersample;
             float _Zoom;
             float _RayAngle;
             float _AspectRatio;
@@ -61,7 +60,8 @@ Shader "LUTBeam/GoboLookupGenerator" {
 
             float4 frag (v2f input) : SV_Target
             {
-                if(_Fast > 0.5)
+                _Supersample = 0;
+                if(_Supersample < 0.5) // fast version that's ok for realtime use
                 {
                     float2 tile   = floor(input.uv * start_size);
                     float2 inTile = frac(input.uv * start_size);
@@ -87,7 +87,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
                 
                     return result;
                 }
-                else
+                else // slow version, don't use this when rendering in realtime
                 {
                     uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
                     uint2 posIdx = texel / (uint)end_size;

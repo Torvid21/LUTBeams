@@ -284,6 +284,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         float  wf = dot(pl.xyz, apex) + pl.w;
         beam.clipPlane = float4(-nf, wf) / length(nf);
 
+        // If the beam touches the mirror, stretch its far-z vertexes and place them on the surface
+        // of the oblique clipping plane, so we don't see the inside of the beam!
         if (vertexPos.z > 0.0)
         {
             float pathW = dot(pl.xyz, forward);
