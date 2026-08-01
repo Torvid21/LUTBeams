@@ -60,7 +60,6 @@ Shader "LUTBeam/GoboLookupGenerator" {
 
             float4 frag (v2f input) : SV_Target
             {
-                _Supersample = 0;
                 if(_Supersample < 0.5) // fast version that's ok for realtime use
                 {
                     float2 tile   = floor(input.uv * start_size);
