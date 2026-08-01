@@ -128,6 +128,12 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
 BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearRadiusX, float nearRadiusY, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
 {
     BeamData beam = (BeamData)0;
+    
+    if (!any(color) || (brightnessVolume <= 0 && brightnessGobo <= 0))
+    {
+        beam.vertex = 1.0 / 0.0;
+        return beam;
+    }
 
     zoomX = max(zoomX, 0.0001);
     zoomY = max(zoomY, 0.0001);
@@ -248,11 +254,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
     beam.falloffNorm = 3.198 / I;
 
-    if (!any(color) || (brightnessVolume <= 0 && brightnessGobo <= 0))
-    {
-        beam.vertex = 1.0 / 0.0;
-        return beam;
-    }
 
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)
