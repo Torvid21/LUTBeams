@@ -8,8 +8,7 @@ using VRC.SDK3.Video.Components.Base;
 using VRC.SDKBase;
 using VRC.Udon;
 
-// Minimal video player, CC0 / MIT, 
-// I wrote this because I was frustrated that video players are so much more complicated than I need.
+// Minimal video player, CC0 / MIT
 
 [UdonBehaviourSyncMode(BehaviourSyncMode.Manual)]
 public class VideoPlayer : UdonSharpBehaviour
@@ -18,9 +17,6 @@ public class VideoPlayer : UdonSharpBehaviour
     BaseVRCVideoPlayer player;
 
     public VRCAVProVideoPlayer proVideoPlayer;
-    //public VRCAVProVideoScreen proScreen;
-    //public VRCAVProVideoSpeaker proSpeaker;
-
     public bool Sycned = false;
     public bool Autoplay = false;
 

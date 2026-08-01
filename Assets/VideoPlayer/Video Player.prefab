@@ -203,7 +203,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 35630e38b4e5ffb40b44ec5348b4333f, type: 2}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 0.5}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -527,7 +527,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 35630e38b4e5ffb40b44ec5348b4333f, type: 2}
   m_Color: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -609,7 +609,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 2100000, guid: 35630e38b4e5ffb40b44ec5348b4333f, type: 2}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
@@ -731,7 +731,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8442806478767162720}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0.0000021010635}
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
   m_LocalPosition: {x: 1.8284149, y: 0.004999876, z: -2.5566497}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -766,14 +766,16 @@ MonoBehaviour:
   _udonSharpBackingUdonBehaviour: {fileID: 7142085166888002720}
   inputField: {fileID: 1902801105435004143}
   proVideoPlayer: {fileID: 1226647839605439698}
-  Sycned: 1
-  filter: {fileID: 0}
+  Synced: 1
+  Autoplay: 1
+  autoplayURL:
+    url: https://torvid.torvid.net/waves_converted.mp4
   audioSource: {fileID: 3871030735205001206}
   unityVideoPlayer: {fileID: 7614116323766247218}
   Target: {fileID: 8400000, guid: cfc61c18ad0951044ace4272ebf15435, type: 2}
   screenMaterial: {fileID: 2100000, guid: 61a023d6fa1a664438c4980ac71a0a18, type: 2}
   url:
-    url: https://www.youtube.com/watch?v=na-F-F4QlqI
+    url: 
   timeAndOffset: {x: 0, y: 0}
   syncFrequency: 15
 --- !u!114 &7142085166888002720

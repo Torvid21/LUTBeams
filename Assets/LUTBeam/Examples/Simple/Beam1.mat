@@ -24,11 +24,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _GoboLUT:
-        m_Texture: {fileID: 18700000, guid: e50cb472778d04a4e9a47bc115c8e5fc, type: 2}
+        m_Texture: {fileID: 18700000, guid: d7b0aa7faf19c524a9b8555556705094, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GoboTex:
-        m_Texture: {fileID: 18700000, guid: 6744bedb34e194641b9e480d5682a004, type: 2}
+        m_Texture: {fileID: 18700000, guid: 56dc3461f5bb5524ba605eb0a6c077a1, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Shadows:
