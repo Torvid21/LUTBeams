@@ -283,6 +283,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         float3 nf = WorldToFrustumVector(apex, forward, right, up, pl.xyz);
         float  wf = dot(pl.xyz, apex) + pl.w;
         beam.clipPlane = float4(-nf, wf) / length(nf);
+        
+        useQuad = false;
 
         // If the beam touches the mirror, stretch its far-z vertexes and place them on the surface
         // of the oblique clipping plane, so we don't see the inside of the beam!
