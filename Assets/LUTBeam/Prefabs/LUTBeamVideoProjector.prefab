@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8055680300638403855}
   - component: {fileID: 619618468669029631}
   m_Layer: 0
-  m_Name: LUTBeam Video Projector
+  m_Name: LUTBeamVideoProjector
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

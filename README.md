@@ -15,7 +15,7 @@ Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 
 ## Usage
 1. place a LUTBeamManager prefab in the scene
-2. place a LUTBeam prefab in the scene
+2. place a LUTBeamSimple or LUTBeamAvatar prefab in the scene
 3. ???
 
 If you are putting it in an avatar, delete the ExplodeBounds script and scale the cube up manually instead so it doesn't cull.

@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 8757895413590626939}
   - component: {fileID: 7453576320433148262}
   m_Layer: 0
-  m_Name: LUTBeam
+  m_Name: LUTBeamSimple
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
