@@ -24,7 +24,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _GoboLUT:
-        m_Texture: {fileID: 0}
+        m_Texture: {fileID: 18700000, guid: d7b0aa7faf19c524a9b8555556705094, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GoboTex:

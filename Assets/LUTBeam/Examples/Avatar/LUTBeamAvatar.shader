@@ -1,4 +1,4 @@
-Shader "LUTBeam/AvatarExample"
+Shader "LUTBeam/Avatar"
 {
     Properties
     {

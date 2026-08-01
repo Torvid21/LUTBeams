@@ -10,13 +10,18 @@ Example uses:
 
 <img src="Media/20260730195451477.png" />
 
+## Download
+Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
+
 ## Usage
-1. place a LUTBeamManager in the scene (Assets/LUTBeam/Examples/LUTBeamManager.prefab)
-2. place a LUTBeam in the scene (Assets/LUTBeam/Examples/Simple/LUTBeam.prefab)
+1. place a LUTBeamManager prefab in the scene
+2. place a LUTBeam prefab in the scene
 3. ???
 
-## To change gobo images
-Replace the images in the LUTBeamManager, then right click it and press "Generate Materials". This will update the texture arrays with your new gobos.
+If you are putting it in an avatar, delete the ExplodeBounds script and scale the cube up manually instead so it doesn't cull.
+
+## To change gobo (light cookie) images
+Right click the the component title and click "Generate Texture Array", then assign that array to your material.
 
 <img src="Media/20260730221904896.png" width="75%"/>
 
