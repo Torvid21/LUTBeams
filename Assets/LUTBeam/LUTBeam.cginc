@@ -8,6 +8,11 @@
 // angular resolution, IE how many angles can the beam be viewed from.
 #define end_size 128
 
+
+// Makes it so the beam becomes a fullscreen quad if it intersects the oblique mirror plane.
+// This is very expensive! so it's off by default.
+#define ACCURATE_MIRROR 0
+
 struct BeamData
 {
     // Start texcoords at 40 so they are unlikely to be used by something else.
@@ -278,6 +283,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     // 2. Mirrors can cut open a hole in the beam, make it a fullscreen quad in that case so the hole is hidden.
     if (_VRChatMirrorMode != 0)
     {
+#if ACCURATE_MIRROR
         float sMin = 1e30, sMax = -1e30;
         [unroll]
         for (uint c = 0; c < 8; c++)
@@ -303,13 +309,13 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
             #endif
         }
         useQuad = useQuad || (sMin < 0.05 && sMax > -0.05);
-
+#endif
 
         // Also generate an extra clipping plane for the oblique frustum Z-cut
         float4 pl = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) - float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
         float3 nf = WorldToFrustumVector(apex, forward, right, up, pl.xyz);
         float  wf = dot(pl.xyz, apex) + pl.w;
-        beam.clipPlane = float4(-nf, wf);
+        beam.clipPlane = float4(-nf, wf) / length(nf);
     }
 
     // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
@@ -427,7 +433,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         else
             tMax = min(tMax, t);
     }
-
+    
     float entryDistance = max(0, tMin);
     float exitDistance = max(0, tMax);
     
@@ -516,7 +522,15 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
             col += grab.rgb * goboResult;
         }
     }
-
+    
+#if !ACCURATE_MIRROR
+    if (_VRChatMirrorMode != 0)
+    {
+        float3 testPos = rayOrigin + rayDir * entryDistance;
+        float distToClip = beam.clipPlane.w - dot(beam.clipPlane.xyz, testPos);
+        col *= saturate((distToClip-1) / 8);
+    }
+#endif
     return float4(col, 1);
     
 }

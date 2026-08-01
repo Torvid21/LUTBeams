@@ -1,6 +1,7 @@
-#if UNITY_EDITOR
 using System.IO;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -15,6 +16,7 @@ public class LUTBeamMaterialManager : MonoBehaviour
     public int LUTResolution = 1024;
     public int GoboResolution = 512;
 
+#if UNITY_EDITOR
     [ContextMenu("Generate Materials")]
     public void _GenerateMaterials()
     {
@@ -146,6 +148,5 @@ public class LUTBeamMaterialManager : MonoBehaviour
 
         AssetDatabase.SaveAssets();
     }
-}
-
 #endif
+}

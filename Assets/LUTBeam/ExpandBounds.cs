@@ -4,7 +4,7 @@ using UnityEngine;
 [UdonBehaviourSyncMode(BehaviourSyncMode.None)]
 public class ExpandBounds : UdonSharpBehaviour
 {
-    public float expandSize = 5000f;
+    public float expandSize = 10.0f;
 
     void Start()
     {

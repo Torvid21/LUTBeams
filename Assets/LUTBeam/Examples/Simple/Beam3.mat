@@ -54,14 +54,14 @@ Material:
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
-    - _FarZ: 9.38
+    - _FarZ: 100
     - _FarZMaxZoom: 10
     - _Gobo: -10.73
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.299
+    - _NearRadius: 0.1
     - _NearRadiusX: 1
     - _NearRadiusY: 0.1
     - _Offset: 0
@@ -74,7 +74,7 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 0.51
+    - _Zoom: 0.06
     - _ZoomX: 0.52
     - _ZoomY: 0
     m_Colors:
