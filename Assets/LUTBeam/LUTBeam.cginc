@@ -8,11 +8,6 @@
 // angular resolution, IE how many angles can the beam be viewed from.
 #define end_size 128
 
-
-// Makes it so the beam becomes a fullscreen quad if it intersects the oblique mirror plane.
-// This is very expensive! so it's off by default.
-#define ACCURATE_MIRROR 0
-
 struct BeamData
 {
     // Start texcoords at 40 so they are unlikely to be used by something else.
@@ -280,43 +275,31 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float margin = 0.25;
     bool useQuad = inside > -margin;
 
-    // 2. Mirrors can cut open a hole in the beam, make it a fullscreen quad in that case so the hole is hidden.
+    // 2. Mirrors can cut open a hole in the beam, push the beam back in that case so it gently touches the mirror surface.
     if (_VRChatMirrorMode != 0)
     {
-#if ACCURATE_MIRROR
-        float sMin = 1e30, sMax = -1e30;
-        [unroll]
-        for (uint c = 0; c < 8; c++)
-        {
-            float3 corner = float3(c & 1 ? 0.5 : -0.5,
-                                    c & 2 ? 0.5 : -0.5,
-                                    c & 4 ? 1.0 : 0.0);
-            float  cz = lerp(frustumNearZ, frustumFarZ, corner.z);
-            float3 p = float3(corner.x * ((cz - apexZX) * beam.zoomX * 2),
-                              corner.y * ((cz - apexZY) * beam.zoomY * 2),
-                              cz + frustumOffset);
-            float3 cw = mul(ObjectToWorld_NoScale(), float4(p, 1)).xyz;
-
-            #if defined(USING_STEREO_MATRICES)
-                float4 c0 = mul(unity_StereoMatrixVP[0], float4(cw, 1));
-                float4 c1 = mul(unity_StereoMatrixVP[1], float4(cw, 1));
-                sMin = min(sMin, min(c0.w - c0.z, c1.w - c1.z));
-                sMax = max(sMax, max(c0.w - c0.z, c1.w - c1.z));
-            #else
-                float4 c0 = mul(UNITY_MATRIX_VP, float4(cw, 1));
-                sMin = min(sMin, c0.w - c0.z);
-                sMax = max(sMax, c0.w - c0.z);
-            #endif
-        }
-        useQuad = useQuad || (sMin < 0.05 && sMax > -0.05);
-#endif
-
-        // Also generate an extra clipping plane for the oblique frustum Z-cut
+        // Also generate a clipping plane so it can be cut nice and volumetric-ly..
         float4 pl = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) - float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
         float3 nf = WorldToFrustumVector(apex, forward, right, up, pl.xyz);
         float  wf = dot(pl.xyz, apex) + pl.w;
         beam.clipPlane = float4(-nf, wf) / length(nf);
+
+        if (vertexPos.z > 0.0)
+        {
+            float pathW = dot(pl.xyz, forward);
+            float sd = dot(pl.xyz, worldPos) + pl.w - 0.001;
+            if (sd < 0.0)
+            {
+                worldPos -= forward * (sd / pathW);
+                worldPos += forward * 1;
+                beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
+                beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
+                beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
+                beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
+            }
+        }
     }
+
 
     // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
     if (useQuad)
@@ -522,15 +505,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
             col += grab.rgb * goboResult;
         }
     }
-    
-#if !ACCURATE_MIRROR
-    if (_VRChatMirrorMode != 0)
-    {
-        float3 testPos = rayOrigin + rayDir * entryDistance;
-        float distToClip = beam.clipPlane.w - dot(beam.clipPlane.xyz, testPos);
-        col *= saturate((distToClip-1) / 8);
-    }
-#endif
+
     return float4(col, 1);
     
 }
