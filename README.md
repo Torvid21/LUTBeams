@@ -10,23 +10,23 @@ Example uses:
 
 <img src="Media/20260730195451477.png" />
 
-## Download
+## Installation
 Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 
-## Simple Usage in worlds
+## Usage
 1. Place a **LUTBeamManager prefab** in the scene
 2. Place a **LUTBeamSimple prefab** in the scene
 3. ???
-
-If you are putting it in an avatar, delete the ExplodeBounds script and scale the cube up manually instead so it doesn't culled.
 
 ### To change gobo (light cookie) images
 Right click LUTBeamManager component and click "Generate Texture Array".
 
 <img src="Media/20260730221904896.png" width="75%"/>
 
-## Use with VRSL
-Don't know but should be easy to integrate.
+## Notes
+- Not reccomended for use on avatars, should work but may require some changes to be good.
+- LUBeamManager is needed for a grab-pass to make the beam projection on surfaces look good.
+- VRSL: Don't know but should be easy to integrate.
 
 ## Attribution
 All the code int Assets/LUTBeam/ is MIT / Public Domain.
