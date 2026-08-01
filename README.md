@@ -26,7 +26,7 @@ Replace the images in the LUTBeamManager, then right click it and press "Generat
 Don't know but should be easy to integrate.
 
 ## Attribution
-All the code is MIT / Public Domain.
+All the code int Assets/LUTBeam/ is MIT / Public Domain.
 
 Therinization image is by Nightshades
 
