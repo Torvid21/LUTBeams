@@ -287,21 +287,20 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         
         useQuad = false;
 
-        // If the beam touches the mirror, stretch its far-z vertexes and place them on the surface
-        // of the oblique clipping plane, so we don't see the inside of the beam!
-        if (vertexPos.z > 0.0)
+        float dCurrent = dot(pl.xyz, worldPos) + pl.w - 0.001;
+        float dStart   = dot(pl.xyz, apex) + pl.w - 0.001;
+        if (dCurrent <= 0.0)
         {
-            float pathW = dot(pl.xyz, forward);
-            float sd = dot(pl.xyz, worldPos) + pl.w - 0.001;
-            if (sd < 0.0)
-            {
-                worldPos -= forward * (sd / pathW);
-                worldPos += forward * 1;
-                beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
-                beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
-                beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
-                beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
-            }
+            float denom = dCurrent - dStart;
+            float t = (abs(denom) > 1e-6) ? dCurrent / denom : 1.0;
+            t = saturate(t);
+
+            worldPos = lerp(worldPos, apex, t);
+
+            beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
+            beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
+            beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
+            beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
         }
     }
 
