@@ -13,15 +13,15 @@ Example uses:
 ## Download
 Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 
-## Usage
+## Simple Usage in worlds
 1. Place a LUTBeamManager prefab in the scene
 2. Place a LUTBeamSimple prefab in the scene
 3. ???
 
 If you are putting it in an avatar, delete the ExplodeBounds script and scale the cube up manually instead so it doesn't culled.
 
-## To change gobo (light cookie) images
-Right click LUTBeamManager component and click "Generate Texture Array", then assign that array to your material.
+### To change gobo (light cookie) images
+Right click LUTBeamManager component and click "Generate Texture Array".
 
 <img src="Media/20260730221904896.png" width="75%"/>
 
