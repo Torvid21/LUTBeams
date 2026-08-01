@@ -73,7 +73,7 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 1.521
+    - _Zoom: 1.74
     m_Colors:
     - _Color: {r: 0.61698115, g: 0.9051902, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
