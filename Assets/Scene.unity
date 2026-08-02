@@ -2870,6 +2870,74 @@ MonoBehaviour:
   m_CaretWidth: 1
   m_ReadOnly: 0
   m_ShouldActivateOnSelect: 1
+--- !u!1001 &1168263175
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 7.276
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.281
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 5.317
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.038035456
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.31508306
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.84199804
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.43625155
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 45.29
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 208.804
+      objectReference: {fileID: 0}
+    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 53.262
+      objectReference: {fileID: 0}
+    - target: {fileID: 3379357246057778921, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
+        type: 3}
+      propertyPath: m_Name
+      value: LUTBeamAvatar
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7bc8988dda714f4e9ab12d9c83b0cff, type: 3}
 --- !u!1001 &1192834390
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -3584,8 +3652,8 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.3
-  far clip plane: 1000
+  near clip plane: 4.76
+  far clip plane: 10
   field of view: 60
   orthographic: 0
   orthographic size: 5
@@ -3613,7 +3681,7 @@ Transform:
   m_GameObject: {fileID: 1402414076}
   serializedVersion: 2
   m_LocalRotation: {x: 0.15502207, y: 0.018087778, z: 0.0028388046, w: 0.98774135}
-  m_LocalPosition: {x: -0.98, y: 3.67, z: -3.87}
+  m_LocalPosition: {x: -0.98, y: 5.99, z: 12.56}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5575,3 +5643,4 @@ SceneRoots:
   - {fileID: 1235484808}
   - {fileID: 54334}
   - {fileID: 305021600}
+  - {fileID: 1168263175}

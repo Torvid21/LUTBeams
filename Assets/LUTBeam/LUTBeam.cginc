@@ -397,6 +397,14 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
     float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
 
+    #if LUTBEAM_AVATAR
+        SceneDistance = 9999999;
+    #endif
+
+    #if defined(SHADER_API_MOBILE)
+        SceneDistance = 9999999;
+    #endif
+
     float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
     float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
     float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
@@ -506,6 +514,11 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
             goboResult *= volFacNotHot * beam.colorGobo;
 
             float4 grab = _GrabTexture.SampleLevel(_SamplerClampLinear, suv, 0);
+
+            #if LUTBEAM_AVATAR
+                grab = 1;
+            #endif
+
             col += grab.rgb * goboResult;
         }
     }

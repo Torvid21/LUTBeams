@@ -2,6 +2,7 @@ Shader "LUTBeam/Avatar"
 {
     Properties
     {
+        [NoScaleOffset] _GoboTex ("Gobo Texture", 2DArray) = "white" {}
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
@@ -36,7 +37,8 @@ Shader "LUTBeam/Avatar"
             #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
-
+        
+            Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
             float _NearSize;
@@ -47,20 +49,24 @@ Shader "LUTBeam/Avatar"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
-
+            
             // For projection to look right it needs a grab pass
             // which is really bad for performance so we simply turn it off.
             #define LUTBEAM_CALLBACK_PROJECTION 1
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
-                return 0;
+                return 0;//_GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
             #define LUTBEAM_CALLBACK_VOLUME 1
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
-            
+
+            // This flag disables the grab pass
+            // and disables scene depth
+            // since a lot of worlds don't have that.
+            #define LUTBEAM_AVATAR 1
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
