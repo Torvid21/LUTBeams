@@ -194,7 +194,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 
     beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
 
-    float3 apex = mul(unity_ObjectToWorld, float4(corrected_pos + float3(0,0,frustumOffset), 1)).xyz;
+    float3 apex = mul(unity_ObjectToWorld, float4(corrected_pos + float3(0, 0, frustumOffset), 1)).xyz;
 
     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     beam.frustumNearZ  = frustumNearZ;
@@ -213,8 +213,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
     
     beam.colorGobo = color * brightnessGobo * 1;
-    float lengthNorm = 1;//1.0 / (2.0 * max(zoomX, zoomY) * frustumFarZ);
-    beam.colorVolume = color * brightnessVolume * 0.1 * lengthNorm;
+    beam.colorVolume = color * brightnessVolume * 0.1;
     
     float e = 0.01;
     float Aa = 1.0 + e;
