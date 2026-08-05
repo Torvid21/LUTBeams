@@ -81,6 +81,7 @@ Shader "LUTBeam/Spin"
 
                 return mul(spinMatrix3, vertex);
             }
+
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -112,7 +113,7 @@ Shader "LUTBeam/Spin"
 
                 // simulate dimming that happens when the gobo is zoomed out
                 float zoomFade = lerp(1, 0.1, saturate((_ZoomX+_ZoomY)*0.25));
-
+                
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
                 o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
