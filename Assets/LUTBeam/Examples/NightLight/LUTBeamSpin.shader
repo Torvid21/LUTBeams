@@ -56,28 +56,30 @@ Shader "LUTBeam/Spin"
             float _BeamFalloff;
             float _SpinSpeed;
                 
-            #define LUTBEAM_CALLBACK_PROJECTION 1
+            #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
-            #define LUTBEAM_CALLBACK_VOLUME 1
+
+            #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
             
-            #define LUTBEAM_CALLBACK_TRANSFORM 1
-            float3x3 LUTBeamCallbackTransform(float3 vertex, inout float3 worldPositionOffset)
+            #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
+            float3 LUTBeamCallbackTransform(float3 vertex)
             {
-                float spin = _Time.g*_SpinSpeed;
+                float spin = _Time.g * _SpinSpeed;
 
                 float3x3 spinMatrix3 = float3x3(
                     cos(spin), -sin(spin), 0,
                     sin(spin),  cos(spin), 0,
                     0,         0,          1
                 );
-                return spinMatrix3;
+
+                return mul(spinMatrix3, vertex);
             }
             #include "Assets/LUTBeam/LUTBeam.cginc"
         

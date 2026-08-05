@@ -2,11 +2,18 @@
 // Initial implementation by Torvid
 // Optimizations by ValueFactory
 // Tweaks and MDMX integration by Micca
-
 // position resolution, IE how many possible places the camera can be.
 #define start_size 8
 // angular resolution, IE how many angles can the beam be viewed from.
 #define end_size 128
+
+struct dummy_struct {};
+
+#define CUSTOM_STRUCT_EXISTS
+#ifndef NESTED_STRUCT_TYPE
+    #define NESTED_STRUCT_TYPE dummy_struct
+    #undef CUSTOM_STRUCT_EXISTS
+#endif
 
 struct BeamData
 {
@@ -27,6 +34,7 @@ struct BeamData
     float4 clipPlane : TEXCOORD52;
     float4 falloffNorm : TEXCOORD53;
     float4 aniso : TEXCOORD54;
+    NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
 };
 
 float inverselerp(float from, float to, float value)
@@ -128,13 +136,13 @@ float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 
 BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, float nearSizeX, float nearSizeY, float offset, float3 color, float brightnessVolume, float brightnessGobo, float beamFalloff)
 {
     BeamData beam = (BeamData)0;
-    
-    if (!any(color) || (brightnessVolume <= 0 && brightnessGobo <= 0))
+
+    if ((!any(color)) || (brightnessVolume <= 0 && brightnessGobo <= 0))
     {
-        beam.vertex = 1.0 / 0.0;
+        beam.vertex = asfloat(-1);
         return beam;
     }
-
+    
     zoomX = max(zoomX, 0.0001);
     zoomY = max(zoomY, 0.0001);
     beam.zoomX = zoomX;
@@ -160,70 +168,33 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     beam.vertex.x *= (beam.vertex.z - apexZX) * zoomX * 2;
     beam.vertex.y *= (beam.vertex.z - apexZY) * zoomY * 2;
     beam.vertex.z += frustumOffset;
-
-    float3 forward = float3(0, 0, -1);
-    float3 right = float3(1, 0, 0);
-    float3 up = float3(0, 1, 0);
-
+    
+    float3 right    = float3(1, 0, 0);
+    float3 up       = float3(0, 1, 0);
+    float3 forward  = float3(0, 0, -1);
+    
     // Shader-based rotation and position offsets should probably go here!
     // Since you're digging here, you probably already know what you are doing, so who am I to say things x>
-    float3 positionOffset = 0;
+    float3 corrected_pos = 0;
 
-#if LUTBEAM_CALLBACK_TRANSFORM
-    float3x3 rotation = LUTBeamCallbackTransform(beam.vertex, positionOffset);
-    beam.vertex.xyz = mul(beam.vertex, rotation).xyz;
-    forward = mul(forward, rotation).xyz;
-    right = mul(right, rotation).xyz;
-    up = mul(up, rotation).xyz;
-    // Example
-    //float3x3 LUTBeamTransform(float3 vertex, inout float3 offset)
-    //{
-    //    float goboSpin = _Time.g;
-    //    float tilt = _Time.g;
-    //    float pan = _Time.g;
-    //
-    //    float3x3 spinMatrix3 = float3x3(
-    //        cos(goboSpin), -sin(goboSpin), 0,
-    //        sin(goboSpin),  cos(goboSpin), 0,
-    //        0,              0,             1
-    //    );
-    //
-    //    float3x3 tiltMatrix3 = float3x3(
-    //        1, 0,           0,
-    //        0, cos(tilt), -sin(tilt),
-    //        0, sin(tilt),  cos(tilt)
-    //    );
-    //
-    //    float3x3 panMatrix3 = float3x3(
-    //        cos(pan), -sin(pan), 0,
-    //        sin(pan),  cos(pan), 0,
-    //        0,         0,        1
-    //    );
-    //
-    //    float3x3 combined = mul(spinMatrix3, mul(tiltMatrix3, panMatrix3));
-    //
-    //    offset = float3(cos(_Time.g), 0, sin(_Time.g)) * 5;
-    //
-    //    return combined;
-    //}
-#else
-
-#endif
+    #ifdef LUTBEAM_CALLBACK_VERTEX
+        corrected_pos = LUTBEAM_CALLBACK_VERTEX(float3(0, 0, 0));
+        beam.vertex.xyz = LUTBEAM_CALLBACK_VERTEX(beam.vertex.xyz);
+        forward = LUTBEAM_CALLBACK_VERTEX(forward) - corrected_pos;
+        right = LUTBEAM_CALLBACK_VERTEX(right) - corrected_pos;
+        up = LUTBEAM_CALLBACK_VERTEX(up) - corrected_pos;
+    #endif
 
     forward = normalize(mul(unity_ObjectToWorld, float4(forward, 0)).xyz);
     right = normalize(mul(unity_ObjectToWorld, float4(right, 0)).xyz);
     up = normalize(mul(unity_ObjectToWorld, float4(up, 0)).xyz);
     
-    float3 worldPos = mul(ObjectToWorld_NoScale(), beam.vertex);
-    worldPos.xyz += positionOffset;
+    float3 worldPos = mul(unity_ObjectToWorld, beam.vertex);
     beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
 
     beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
 
-    float3 apex = mul(unity_ObjectToWorld, float4(0, 0, 0, 1)).xyz;
-    apex -= forward * frustumOffset;
-    
-    apex += positionOffset;
+    float3 apex = mul(unity_ObjectToWorld, float4(corrected_pos + float3(0,0,frustumOffset), 1)).xyz;
 
     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     beam.frustumNearZ  = frustumNearZ;
@@ -245,7 +216,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float lengthNorm = 1;//1.0 / (2.0 * max(zoomX, zoomY) * frustumFarZ);
     beam.colorVolume = color * brightnessVolume * 0.1 * lengthNorm;
     
-    // Calculate compensation value to 'normalize' falloff so it doesn't explode to a crazy high value.
     float e = 0.01;
     float Aa = 1.0 + e;
     float p = beamFalloff + 1e-4;
@@ -253,7 +223,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
     beam.falloffNorm = 3.198 / I;
-
 
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)
@@ -304,7 +273,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         }
     }
 
-
     // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
     if (useQuad)
     {
@@ -332,49 +300,60 @@ float Bayer2(float2 a) { a = floor(a); return frac(a.x * 0.5 + a.y * a.y * 0.75)
 float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
 float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
-float3 MagicSample(float2 start, float2 end, float2 pixel)
+float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE nestedStruct)
 {
-#if 1
-    float tex_size = start_size * end_size;
+    #if 1
+        float tex_size = start_size * end_size;
 
-    float2 posF          = saturate(start) * (start_size - 1);
-    float2 cell          = min(floor(posF), start_size - 2);
-    float2 chunkblend    = posF - cell;
-    float2 chunkblendInv = 1 - chunkblend;
-    float2 chunk         = cell * end_size;
-    
-    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-    
-    #if LUTBEAM_CALLBACK_VOLUME
-        float3 s0 = LUTBeamCallbackVolume(_SamplerClampLinear, (base) / tex_size);
-        float3 s1 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, 0)) / tex_size);
-        float3 s2 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size);
-        float3 s3 = LUTBeamCallbackVolume(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);
-    
-        return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
-             + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+        float2 posF          = saturate(start) * (start_size - 1);
+        float2 cell          = min(floor(posF), start_size - 2);
+        float2 chunkblend    = posF - cell;
+        float2 chunkblendInv = 1 - chunkblend;
+        float2 chunk         = cell * end_size;
+        
+        float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
+        
+        #ifdef LUTBEAM_CALLBACK_VOLUME
+            #ifdef CUSTOM_STRUCT_EXISTS
+                float3 s0 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(0,        0))        / tex_size, nestedStruct);
+                float3 s1 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(end_size, 0))        / tex_size, nestedStruct);
+                float3 s2 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size, nestedStruct);
+                float3 s3 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size, nestedStruct);
+            #else
+                float3 s0 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(0,        0))        / tex_size);
+                float3 s1 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(end_size, 0))        / tex_size);
+                float3 s2 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(0,        end_size)) / tex_size);
+                float3 s3 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);
+            #endif
+
+            return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
+                + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+        #else
+            return 1;
+        #endif
     #else
-        return 1;
-    #endif
+        // I realized I can sample just once, the angular resolution will look dithery
+        // but maybe we can get away with it, ahaha. I left the old verison commented out
+        // in case people get upset
+        float tex_size = start_size * end_size;
+        float2 n = float2(Bayer4(pixel), Bayer4(pixel.yx + 31.0));
+        float2 posF  = saturate(start) * (start_size - 1);
+        float2 cell  = floor(posF + n);
+        float2 chunk = cell * end_size;
 
-#else
+        float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
 
-    // I realized I can sample just once, the angular resolution will look dithery
-    // but maybe we can get away with it, ahaha. I left the old verison commented out
-    // in case people get upset
-    float tex_size = start_size * end_size;
-    float2 n = float2(Bayer4(pixel), Bayer4(pixel.yx + 31.0));
-    float2 posF  = saturate(start) * (start_size - 1);
-    float2 cell  = floor(posF + n);
-    float2 chunk = cell * end_size;
+        #ifdef LUTBEAM_CALLBACK_VOLUME
+            #ifdef NESTED_STRUCT_TYPE
+                float3 goboResult = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, base / tex_size, nestedStruct);
+            #else
+                float3 goboResult = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, base / tex_size);
+            #endif
+        #else
+            float3 goboResult = float3(1,1,1);
+        #endif
 
-    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-
-    #if LUTBEAM_CALLBACK_VOLUME
-        return LUTBeamCallbackVolume(_SamplerClampLinear, base / tex_size);
-    #else
-        return 1;
-    #endif
+        return goboResult;
 #endif
 }
 
@@ -396,7 +375,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
 
     float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
     float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
-
+    
     #if LUTBEAM_AVATAR
         SceneDistance = 9999999;
     #endif
@@ -428,7 +407,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         else
             tMax = min(tMax, t);
     }
-    
+
     float entryDistance = max(0, tMin);
     float exitDistance = max(0, tMax);
     
@@ -446,7 +425,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         entryDistance = min(entryDistance, SceneDistance);
         exitDistance = min(exitDistance, SceneDistance);
     }
-    
+
     if(exitDistance - entryDistance < 0.01)
         discard;
     
@@ -459,7 +438,6 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
 
     float3 entryNormalized = entryPos.yzx;
     float3 exitNormalized = exitPos.yzx;
-    
     
     entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
     entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
@@ -484,7 +462,7 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
 
     // Normalize to 0-1
     t = saturate(inverselerp(frustumNearZ-0.06, frustumFarZ, distToSource + frustumNearZ));
-    
+
     float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
     float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
     float3 volColor = volFac * beam.colorVolume * beam.falloffNorm;
@@ -493,28 +471,28 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
     if(volFac < 0.001)
         discard;
 
-    col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy);
+    col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy, beam.nestedStruct);
 
-    // more correct but dosen't look good ??
-    //col *= (exitDistance - entryDistance);
-
-    col *= volColor;
+     col *= volColor;
 
     // gobo on the surface
-    if(hit && any(beam.colorGobo))
+    if(hit && (any(beam.colorGobo)))
     {
-#if LUTBEAM_CALLBACK_PROJECTION
-        float3 goboResult = LUTBeamCallbackProjection(_SamplerClampLinear, exitNormalized.xy);
-#else
-        float3 goboResult = 1;
-#endif
+        #ifdef LUTBEAM_CALLBACK_PROJECTION
+            #ifdef CUSTOM_STRUCT_EXISTS
+                float3 goboResult = LUTBEAM_CALLBACK_PROJECTION(_SamplerClampLinear, exitNormalized, beam.nestedStruct);
+            #else
+                float3 goboResult = LUTBEAM_CALLBACK_PROJECTION(_SamplerClampLinear, exitNormalized);
+            #endif
+        #else
+            float3 goboResult = float3(1, 1, 1);
+        #endif
         // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
         if(any(goboResult))
         {
             goboResult *= volFacNotHot * beam.colorGobo;
 
             float4 grab = _GrabTexture.SampleLevel(_SamplerClampLinear, suv, 0);
-
             #if LUTBEAM_AVATAR
                 grab = 1;
             #endif

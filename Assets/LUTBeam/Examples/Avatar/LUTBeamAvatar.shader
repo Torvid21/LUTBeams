@@ -52,12 +52,12 @@ Shader "LUTBeam/Avatar"
             
             // For projection to look right it needs a grab pass
             // which is really bad for performance so we simply turn it off.
-            #define LUTBEAM_CALLBACK_PROJECTION 1
+            #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 return 0;//_GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
             }
-            #define LUTBEAM_CALLBACK_VOLUME 1
+            #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
