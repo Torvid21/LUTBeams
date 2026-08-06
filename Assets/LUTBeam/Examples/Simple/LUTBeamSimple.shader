@@ -19,10 +19,30 @@ Shader "LUTBeam/Simple"
         _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
         _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
+        
+        [Header(Stencil)]
+        [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
+        [IntRange] _StencilReadMask ("Read Mask", Range(0, 255)) = 255
+        [IntRange] _StencilWriteMask ("Write Mask", Range(0, 255)) = 255
+        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompareFunction ("Compare Function", Float) = 6
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassOp ("Pass Op", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Fail Op", Float) = 0
+        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("ZFail Op", Float) = 0
     }
     SubShader
     {
         Tags {"RenderType"="Transparent" "Queue"="Transparent+303" }
+        
+        Stencil
+        {
+            Ref [_StencilRef]
+            ReadMask [_StencilReadMask]
+            WriteMask [_StencilWriteMask]
+            Comp [_StencilCompareFunction]
+            Pass [_StencilPassOp]
+            Fail [_StencilFailOp]
+            ZFail [_StencilZFailOp]
+        }
 
         LOD 100
 

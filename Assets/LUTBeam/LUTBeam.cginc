@@ -412,9 +412,9 @@ float3 LUTBeamFrag(BeamData beam)
     
     #ifdef LUTBEAM_CALLBACK_DEPTH
         #ifdef NESTED_STRUCT_TYPE
-            float3 goboResult = LUTBEAM_CALLBACK_DEPTH(tMin, tMax, nestedStruct);
+            LUTBEAM_CALLBACK_DEPTH(tMin, tMax, nestedStruct);
         #else
-            float3 goboResult = LUTBEAM_CALLBACK_DEPTH(tMin, tMax);
+            LUTBEAM_CALLBACK_DEPTH(tMin, tMax);
         #endif
     #endif
     
