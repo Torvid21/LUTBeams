@@ -5534,6 +5534,136 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: lastGoboArraySize
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[0].name
+      value: 
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].name
+      value: New Gobo Array
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[2].name
+      value: test 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[3].name
+      value: dgrdgd
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[4].name
+      value: New Gobo Array
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].prefix
+      value: test
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.size
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[2].gobos.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[3].gobos.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[4].gobos.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[0]
+      value: 
+      objectReference: {fileID: 2800000, guid: b508d1c02a80fea418b31c750ed8c072, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[1]
+      value: 
+      objectReference: {fileID: 2800000, guid: b508d1c02a80fea418b31c750ed8c072, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[2]
+      value: 
+      objectReference: {fileID: 2800000, guid: b508d1c02a80fea418b31c750ed8c072, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[3]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1c31563d53e1dcf42921127302f3f4a8, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[4]
+      value: 
+      objectReference: {fileID: 2800000, guid: a3b7e2ccec26062498b38345e2231e44, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[5]
+      value: 
+      objectReference: {fileID: 2800000, guid: 92887a551502b6741aaa9837f89ea585, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[6]
+      value: 
+      objectReference: {fileID: 2800000, guid: 34964857902fb1940948dba49a487a6f, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[7]
+      value: 
+      objectReference: {fileID: 2800000, guid: b508d1c02a80fea418b31c750ed8c072, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[1].gobos.Array.data[8]
+      value: 
+      objectReference: {fileID: 2800000, guid: 2f9d7a94fff5853429e436444e7510ad, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[2].gobos.Array.data[0]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[3].gobos.Array.data[0]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[3].gobos.Array.data[1]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[4].gobos.Array.data[0]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
+    - target: {fileID: 4994938251280433707, guid: 2d67d165f82ed064a857d8050ae34ad8,
+        type: 3}
+      propertyPath: goboArray.Array.data[4].gobos.Array.data[1]
+      value: 
+      objectReference: {fileID: 2800000, guid: 1093609d6f3c4634e86abc322c71e84d, type: 3}
     - target: {fileID: 7054908739907814548, guid: 2d67d165f82ed064a857d8050ae34ad8,
         type: 3}
       propertyPath: serializationData.Prefab
