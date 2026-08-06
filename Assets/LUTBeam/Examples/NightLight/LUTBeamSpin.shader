@@ -126,7 +126,7 @@ Shader "LUTBeam/Spin"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
+                float3 col = LUTBeamFrag(i.beam);
                 return float4(col, 0);
             }
             ENDCG

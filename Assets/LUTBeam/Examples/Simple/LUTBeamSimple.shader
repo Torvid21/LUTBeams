@@ -95,7 +95,7 @@ Shader "LUTBeam/Simple"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = 1;//lerp(1, 0.1, 1-pow(1-saturate(_Zoom*0.5), 5));
+                float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(length(float2(_ZoomX, _ZoomY))*0.5), 5));
 
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
@@ -109,7 +109,7 @@ Shader "LUTBeam/Simple"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                float3 col = LUTBeamFrag(i.beam, _BeamFalloff);
+                float3 col = LUTBeamFrag(i.beam);
                 return float4(col, 0);
             }
             ENDCG

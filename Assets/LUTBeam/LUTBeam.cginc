@@ -34,7 +34,8 @@ struct BeamData
     float4 clipPlane : TEXCOORD52;
     float4 falloffNorm : TEXCOORD53;
     float4 aniso : TEXCOORD54;
-    NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
+    float falloff : TEXCOORD55;
+    NESTED_STRUCT_TYPE nestedStruct : TEXCOORD56;
 };
 
 float inverselerp(float from, float to, float value)
@@ -142,7 +143,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         beam.vertex = asfloat(-1);
         return beam;
     }
-    
+
+    beam.falloff = beamFalloff;
     zoomX = max(zoomX, 0.0001);
     zoomY = max(zoomY, 0.0001);
     beam.zoomX = zoomX;
@@ -351,13 +353,14 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
         #else
             float3 goboResult = float3(1,1,1);
         #endif
-
+        
         return goboResult;
 #endif
 }
 
-float3 LUTBeamFrag(BeamData beam, float beamFalloff)
+float3 LUTBeamFrag(BeamData beam)
 {
+    float beamFalloff = beam.falloff;
     float frustumNearZ = beam.frustumNearZ;
     float frustumFarZ = beam.frustumFarZ;
     float frustumOffset = beam.frustumOffset;
@@ -406,7 +409,15 @@ float3 LUTBeamFrag(BeamData beam, float beamFalloff)
         else
             tMax = min(tMax, t);
     }
-
+    
+    #ifdef LUTBEAM_CALLBACK_DEPTH
+        #ifdef NESTED_STRUCT_TYPE
+            float3 goboResult = LUTBEAM_CALLBACK_DEPTH(tMin, tMax, nestedStruct);
+        #else
+            float3 goboResult = LUTBEAM_CALLBACK_DEPTH(tMin, tMax);
+        #endif
+    #endif
+    
     float entryDistance = max(0, tMin);
     float exitDistance = max(0, tMax);
     
