@@ -89,8 +89,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0.26
-    - _ZoomY: 0.42
+    - _ZoomX: 0.25
+    - _ZoomY: 0.25
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

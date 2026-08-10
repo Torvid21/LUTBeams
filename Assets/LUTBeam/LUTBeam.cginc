@@ -35,6 +35,7 @@ struct BeamData
     float4 falloffNorm : TEXCOORD53;
     float4 aniso : TEXCOORD54;
     float falloff : TEXCOORD55;
+    float3 worldPos : TEXCOORD57;
     NESTED_STRUCT_TYPE nestedStruct : TEXCOORD56;
 };
 
@@ -192,6 +193,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     up = normalize(mul(unity_ObjectToWorld, float4(up, 0)).xyz);
     
     float3 worldPos = mul(unity_ObjectToWorld, beam.vertex);
+    beam.worldPos = worldPos;
     beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
 
     beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
@@ -210,7 +212,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 objectPos = mul(unity_ObjectToWorld, float4(0, 0, 0, 1));
 
     beam.cameraForward = WorldToFrustumVector(apex, forward, right, up, cameraForward);
-
     beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
     beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
     
@@ -358,6 +359,18 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
 #endif
 }
 
+float2 sphIntersect(float3 ro, float3 rd, float3 ce, float ra)
+{
+    float3 oc = ro - ce;
+    float b = dot( oc, rd );
+    float3 qc = oc - b*rd;
+    float h = ra*ra - dot( qc, qc );
+    if( h < 0.0 )
+        return float2(-1.0, -1.0); // no intersection
+    h = sqrt( h );
+    return float2( -b-h, -b+h );
+}
+
 float3 LUTBeamFrag(BeamData beam)
 {
     float beamFalloff = beam.falloff;
@@ -409,7 +422,9 @@ float3 LUTBeamFrag(BeamData beam)
         else
             tMax = min(tMax, t);
     }
+    float2 st = sphIntersect(_WorldSpaceCameraPos, normalize(beam.worldPos - _WorldSpaceCameraPos), float3(0, 0, 0), 5);
     
+
     #ifdef LUTBEAM_CALLBACK_DEPTH
         #ifdef NESTED_STRUCT_TYPE
             LUTBEAM_CALLBACK_DEPTH(tMin, tMax, nestedStruct);
@@ -418,10 +433,51 @@ float3 LUTBeamFrag(BeamData beam)
         #endif
     #endif
     
-    float entryDistance = max(0, tMin);
-    float exitDistance = max(0, tMax);
+     tMin = max(0, tMin);
+     tMax = max(0, tMax);
     
-    bool hit = (exitDistance > SceneDistance);
+    if( st.y<0.0 ) { }
+    else
+    {
+        //return saturate(tMin - st.x);
+        st.y = max(0, st.y);
+        st.x = max(0, st.x);
+
+        if((tMin > st.x) && (tMin > st.y) && (tMax > st.x) && (tMax > st.y))
+        {
+            // sphere entirely in front
+        }
+        else if((tMin < st.x) && (tMin < st.y) && (tMax < st.x) && (tMax < st.y))
+        {
+            // sphere entirely behind
+        }
+        else
+        {
+            if(st.x < tMin && st.y < tMax && st.y > tMin && st.x < tMax)
+            {
+                tMin = st.y;
+                tMax = tMax;
+            }
+            else if(tMin < st.x && tMin < st.y && tMax > st.x && tMax > st.y)
+            {
+                tMin = tMin;
+                tMax = st.x;
+            }
+            else if(tMin < st.x && tMin < st.y && tMax > st.x && tMax < st.y)
+            {
+                tMin = tMin;
+                tMax = st.x;
+            }
+            else if(st.x < tMin && st.y > tMax)
+            {
+                tMin = 0;
+                tMax = 0;
+            }
+        }
+    }
+
+    
+    bool hit = (tMax > SceneDistance);
 
     if(SceneDistance < 0.001)
         hit = false;
@@ -432,15 +488,15 @@ float3 LUTBeamFrag(BeamData beam)
     // 2025-09-23
     if(SceneDistance >= 0)
     {
-        entryDistance = min(entryDistance, SceneDistance);
-        exitDistance = min(exitDistance, SceneDistance);
+        tMin = min(tMin, SceneDistance);
+        tMax = min(tMax, SceneDistance);
     }
 
-    if(exitDistance - entryDistance < 0.01)
+    if(tMax - tMin < 0.01)
         discard;
     
-    float3 entryPos = rayOrigin + rayDir * entryDistance;
-    float3 exitPos = rayOrigin + rayDir * exitDistance;
+    float3 entryPos = rayOrigin + rayDir * tMin;
+    float3 exitPos = rayOrigin + rayDir * tMax;
     
     entryPos.xyz = -entryPos.zxy;
     exitPos.xyz = -exitPos.zxy;
@@ -511,5 +567,5 @@ float3 LUTBeamFrag(BeamData beam)
         }
     }
 
-    return float4(col, 1);
+    return float4(col, 1);// * float3(1, -100000, 5)
 }
