@@ -14,7 +14,7 @@ Shader "LUTBeam/Spin"
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
         _SpinSpeed ("_SpinSpeed", Float) = 0.1
-        _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Frost ("_Frost", Range(0, 1.0)) = 0
         
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -76,7 +76,7 @@ Shader "LUTBeam/Spin"
             float _BeamIntensity;
             float _BeamFalloff;
             float _SpinSpeed;
-            float _Focus;
+            float _Frost;
 
             float Lerp4(float4 c, float t)
             {
@@ -88,13 +88,13 @@ Shader "LUTBeam/Spin"
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 float4 result = _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Focus);
+                return Lerp4(result, _Frost);
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 float4 result = _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Focus);
+                return Lerp4(result, _Frost);
             }
             
             #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
