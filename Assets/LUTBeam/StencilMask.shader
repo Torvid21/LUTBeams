@@ -28,8 +28,8 @@ Shader "Unlit/StencilMask"
                 ZFail [_StencilZFailOp]
             }
 
-            Cull Front
-            ZTest Always
+            Cull Back
+            ZTest LEqual
             ZWrite Off
             ColorMask 0
             
