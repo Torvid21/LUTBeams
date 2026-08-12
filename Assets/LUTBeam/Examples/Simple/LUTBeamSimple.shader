@@ -86,13 +86,13 @@ Shader "LUTBeam/Simple"
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
                 float4 result = _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return result.rrr;//Lerp4(result, _Focus);
+                return result.r;//Lerp4(result, _Focus);
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
                 float4 result = _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return result.rrr;//Lerp4(result, _Focus);
+                return result.r;//Lerp4(result, _Focus);
             }
             
             #include "Assets/LUTBeam/LUTBeam.cginc"

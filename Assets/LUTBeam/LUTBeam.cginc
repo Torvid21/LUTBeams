@@ -48,37 +48,9 @@ float inverselerp(float from, float to, float value)
 }
 
 UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
-
 SamplerState _SamplerClampLinear;
 Texture2D _GrabTexture;
 float _VRChatMirrorMode;
-
-float3 GetScale()
-{
-    float3 scale = 0;
-    scale.x = length(float3(unity_ObjectToWorld._m00, unity_ObjectToWorld._m10, unity_ObjectToWorld._m20));
-    scale.y = length(float3(unity_ObjectToWorld._m01, unity_ObjectToWorld._m11, unity_ObjectToWorld._m21));
-    scale.z = length(float3(unity_ObjectToWorld._m02, unity_ObjectToWorld._m12, unity_ObjectToWorld._m22));
-    return scale;
-}
-
-float4x4 ObjectToWorld_NoScale()
-{
-    float3 right   = normalize(float3(unity_ObjectToWorld._m00, unity_ObjectToWorld._m10, unity_ObjectToWorld._m20));
-    float3 up      = normalize(float3(unity_ObjectToWorld._m01, unity_ObjectToWorld._m11, unity_ObjectToWorld._m21));
-    float3 forward = normalize(float3(unity_ObjectToWorld._m02, unity_ObjectToWorld._m12, unity_ObjectToWorld._m22));
-    float3 t       = float3(unity_ObjectToWorld._m03, unity_ObjectToWorld._m13, unity_ObjectToWorld._m23);
-
-    float4x4 m = unity_ObjectToWorld;
-    m._m00_m10_m20_m30 = float4(right,   0.0);
-    m._m01_m11_m21_m31 = float4(up,      0.0);
-    m._m02_m12_m22_m32 = float4(forward, 0.0);
-
-    m._m03 = t.x; m._m13 = t.y; m._m23 = t.z;
-    m._m30 = 0.0; m._m31 = 0.0; m._m32 = 0.0; m._m33 = 1.0;
-
-    return m;
-}
 
 // NOTE(valuef): Mirrors use oblique clipping planes so we need to
 // do some extra math to properly convert the depth we sample out
@@ -92,12 +64,6 @@ float4 CalculateFrustumCorrection()
     float x2 = -UNITY_MATRIX_P._32 / (UNITY_MATRIX_P._22 * UNITY_MATRIX_P._34);
     return float4(x1, x2, 0, UNITY_MATRIX_P._33 / UNITY_MATRIX_P._34 + x1 * UNITY_MATRIX_P._13 + x2 * UNITY_MATRIX_P._23);
 }
-
-float CorrectedLinearEyeDepth(float z, float frustumCorrection)
-{
-    return 1.0 / (z / UNITY_MATRIX_P._34 + frustumCorrection);
-}
-
 
 // takes a point at the edge of the square and turns it into a piecewise value
 float EdgeEncode(float2 p)
@@ -166,8 +132,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float wY = -zoomY * apexZY;
     beam.aniso = float4(apexZX, apexZY, wX, wY);
 
-    //beam.clipPlane = float4(0, 0, 0, 1); 
-    
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(frustumNearZ, frustumFarZ, t);
@@ -179,8 +143,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 up       = float3(0, 1, 0);
     float3 forward  = float3(0, 0, -1);
     
-    // Shader-based rotation and position offsets should probably go here!
-    // Since you're digging here, you probably already know what you are doing, so who am I to say things x>
     float3 corrected_pos = 0;
 
     #ifdef LUTBEAM_CALLBACK_VERTEX
@@ -227,7 +189,6 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 
     beam.colorGobo = color * brightnessGobo * 1;
     beam.colorVolume = color * brightnessVolume * 0.1 * falloffNorm;
-    
 
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)
@@ -319,13 +280,18 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     return beam;
  }
 
-float Bayer2(float2 a) { a = floor(a); return frac(a.x * 0.5 + a.y * a.y * 0.75); }
+float Bayer2(float2 a)
+{
+    a = floor(a);
+    return frac(a.x * 0.5 + a.y * a.y * 0.75);
+}
 float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
 float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
-float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE nestedStruct)
+float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, NESTED_STRUCT_TYPE nestedStruct)
 {
-    #if 1
+    if (highQuality)
+    {
         float tex_size = start_size * end_size;
 
         float2 posF          = saturate(start) * (start_size - 1.001);
@@ -353,13 +319,15 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
         #else
             return 1;
         #endif
-    #else
+    }
+    else
+    {
         // I realized I can sample just once, the angular resolution will look dithery
         // but maybe we can get away with it, ahaha. I left the old verison commented out
         // in case people get upset
         float tex_size = start_size * end_size;
-        float2 n = float2(Bayer4(pixel), Bayer4(pixel.yx + 31.0));
-        float2 posF  = saturate(start) * (start_size - 1);
+        float2 n = Bayer4(pixel);
+        float2 posF = saturate(start) * (start_size - 1.001);
         float2 cell  = floor(posF + n);
         float2 chunk = cell * end_size;
 
@@ -372,14 +340,14 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
                 float3 goboResult = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, base / tex_size);
             #endif
         #else
-            float3 goboResult = float3(1,1,1);
+            float3 goboResult = float3(1, 1, 1);
         #endif
         
         return goboResult;
-#endif
+    }
 }
 
-float3 LUTBeamFrag(BeamData beam)
+float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
 {
     float beamFalloff = beam.falloff;
     float frustumNearZ = beam.frustumNearZ;
@@ -513,7 +481,7 @@ float3 LUTBeamFrag(BeamData beam)
     if(volFac < 0.001)
         discard;
 
-    col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy, beam.nestedStruct);
+    col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy, highQuality, beam.nestedStruct);
 
     col *= volColor;
 
