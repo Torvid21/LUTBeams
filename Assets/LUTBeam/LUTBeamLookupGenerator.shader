@@ -42,8 +42,9 @@ Shader "LUTBeam/GoboLookupGenerator" {
             sampler2D _MainTex;
             sampler2D _Mask;
             float4 _MainTex_ST;
-
-            float _Supersample;
+            
+            float _EnableBake_Supersample;
+            float _EnableBake_Gobo;
             float _Zoom;
             float _RayAngle;
             float _AspectRatio;
@@ -56,21 +57,48 @@ Shader "LUTBeam/GoboLookupGenerator" {
                 return o;
             }
 
-            #define Supersample 4
+            #define Supersample 3
 
-            float4 frag (v2f input) : SV_Target
+	        float2 GoldenSpiral(float step)
+	        {
+		        float PhiRadians = 2.3998277;
+		        return float2(sin(step * PhiRadians) * step, cos(step * PhiRadians) * step);
+	        }
+	        float2 SpiralBlurUVOffset(float Radius, float Samples, float i)
+	        {
+		        return GoldenSpiral(i) / Samples * Radius;
+	        }
+
+            float4 SampleGobo(float2 uv)
             {
-                if(_Supersample < 0.5) // fast version that's ok for realtime use
+                uv = (uv-0.5) * 1.1 + 0.5;
+                uv = saturate(uv);
+                return tex2Dlod(_MainTex, float4(uv, 0, 0)) * tex2Dlod(_Mask, float4(uv, 0, 0));
+            }
+
+            float4 frag(v2f input) : SV_Target
+            {
+                if(_EnableBake_Gobo > 0.5)
+                {
+                    int samples = 100;
+		            float4 result = 0;
+		            for (int i = 0; i < samples; i++)
+		            {
+			            result.r += SampleGobo(input.uv + SpiralBlurUVOffset(0.00*0.125, samples, i)).r;
+			            result.g += SampleGobo(input.uv + SpiralBlurUVOffset(0.50*0.125, samples, i)).r;
+			            result.b += SampleGobo(input.uv + SpiralBlurUVOffset(0.70*0.125, samples, i)).r*0.9;
+			            result.a += SampleGobo(input.uv + SpiralBlurUVOffset(1.00*0.125, samples, i)).r*0.8;
+		            }
+		            result /= ((float)samples);
+		            return result;
+                }
+
+                if(_EnableBake_Supersample < 0.5) // fast version that's ok for realtime use
                 {
                     float2 tile   = floor(input.uv * start_size);
                     float2 inTile = frac(input.uv * start_size);
                     float2 start = tile / (start_size - 1.0);
                     float2 end   = (inTile * end_size - 0.5) / (end_size - 1.0);
-
-                    //float2 tile   = floor(input.uv * end_size);
-                    //float2 inTile = frac(input.uv * end_size);
-                    //float2 end   = tile / (end_size - 1.0);
-                    //float2 start = (inTile * start_size - 0.5) / (start_size - 1.0);
 
                     float4 result = 0;
                     for (int i = 0; i < _StepCount; i++)
@@ -78,7 +106,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
                         float t = i / (_StepCount - 1);
                         float2 pos = lerp(start, end, t);
                         pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
-                        result += tex2Dlod(_MainTex, float4(pos, 0, 0)) * tex2Dlod(_Mask, float4(pos, 0, 0)) * !any(pos - saturate(pos));
+                        result += SampleGobo(pos) * !any(pos - saturate(pos));
                     }
                     result /= _StepCount;
                     //result *= distance(start, end);
@@ -91,9 +119,6 @@ Shader "LUTBeam/GoboLookupGenerator" {
                     uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
                     uint2 posIdx = texel / (uint)end_size;
                     uint2 dirIdx = texel % (uint)end_size;
-                    //uint2 texel  = (uint2)floor(input.uv * (start_size * end_size));
-                    //uint2 dirIdx = texel / (uint)start_size;   // outer tile = end
-                    //uint2 posIdx = texel % (uint)start_size;   // within tile = start
 
                     float2 start = posIdx / (start_size - 1.0);
                     float2 end   = dirIdx / (end_size   - 1.0);
@@ -130,16 +155,13 @@ Shader "LUTBeam/GoboLookupGenerator" {
                                         float t = i / (_StepCount - 1);
                                         float2 pos = lerp(newStart, newEnd, t);
                                         pos.y = (pos.y - 0.5) * _AspectRatio + 0.5;
-                                        result += tex2Dlod(_MainTex, float4(pos, 0, 0))
-                                                * tex2Dlod(_Mask,    float4(pos, 0, 0))
-                                                * !any(pos - saturate(pos));
+                                        result += SampleGobo(pos) * !any(pos - saturate(pos));
                                     }
                                 }
                             }
                         }
                     }
                     result /= _StepCount * Supersample * Supersample * Supersample * Supersample;
-                    result.a = 1;
                     return result;
                 }
             }

@@ -44,7 +44,7 @@ Material:
     - _AngleMin: 0.1
     - _BeamFalloff: 1
     - _BeamHotness: 0
-    - _BeamIntensity: 1.17
+    - _BeamIntensity: 2.57
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -58,9 +58,10 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
+    - _Focus: 0
     - _Gobo: 3.92
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 1
+    - _GoboIntensity: 3.48
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
@@ -89,8 +90,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0.26
-    - _ZoomY: 0.42
+    - _ZoomX: 0.5
+    - _ZoomY: 0.5
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

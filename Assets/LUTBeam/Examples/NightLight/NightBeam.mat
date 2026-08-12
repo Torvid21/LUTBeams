@@ -73,6 +73,13 @@ Material:
     - _PanOffset: 0
     - _SpinMult: 4
     - _SpinSpeed: 0.1
+    - _StencilCompareFunction: 6
+    - _StencilFailOp: 0
+    - _StencilPassOp: 0
+    - _StencilReadMask: 255
+    - _StencilRef: 142
+    - _StencilWriteMask: 255
+    - _StencilZFailOp: 0
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90

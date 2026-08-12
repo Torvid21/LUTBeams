@@ -13,6 +13,7 @@ Shader "LUTBeam/Simple"
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
             
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -73,16 +74,25 @@ Shader "LUTBeam/Simple"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
+            float _Focus;
+
+            float Lerp4(float4 c, float t)
+            {
+                float x = saturate(t) * 3.0;
+                return lerp(lerp(lerp(c.r, c.g, saturate(x)), c.b, saturate(x - 1)), c.a, saturate(x - 2));
+            }
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                float4 result = _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
+                return result.rrr;//Lerp4(result, _Focus);
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                float4 result = _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
+                return result.rrr;//Lerp4(result, _Focus);
             }
             
             #include "Assets/LUTBeam/LUTBeam.cginc"

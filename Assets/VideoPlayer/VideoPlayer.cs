@@ -158,7 +158,7 @@ public class VideoPlayer : UdonSharpBehaviour
 
     public void _SlowUpdate()
     {
-        Debug.Log("_SlowUpdate");
+        //Debug.Log("_SlowUpdate");
         SendCustomEventDelayedSeconds(nameof(_SlowUpdate), syncFrequency);
 
         if (Networking.IsOwner(this.gameObject))

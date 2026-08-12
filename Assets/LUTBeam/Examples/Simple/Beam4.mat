@@ -58,6 +58,7 @@ Material:
     - _Falloff: 0
     - _FarZ: 100
     - _FarZMaxZoom: 10
+    - _Focus: 0
     - _Gobo: -10.73
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1

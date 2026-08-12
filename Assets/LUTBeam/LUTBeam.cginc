@@ -19,23 +19,27 @@ struct BeamData
 {
     // Start texcoords at 40 so they are unlikely to be used by something else.
     float4 vertex : SV_POSITION;
-    float2 screenPosition : TEXCOORD40;
-    float zoomX : TEXCOORD41;
-    float zoomY : TEXCOORD42;
-    float frustumCorrection : TEXCOORD43;
-    float frustumNearZ : TEXCOORD44;
-    float frustumFarZ : TEXCOORD45;
-    float frustumOffset : TEXCOORD46;
-    float3 rayOrigin  : TEXCOORD47;
-    float3 cameraForward  : TEXCOORD48;
-    float4 worldPosLocal : TEXCOORD49;
-    float3 colorGobo : TEXCOORD50;
-    float3 colorVolume : TEXCOORD51;
-    float4 clipPlane : TEXCOORD52;
-    float4 falloffNorm : TEXCOORD53;
-    float4 aniso : TEXCOORD54;
-    float falloff : TEXCOORD55;
-    NESTED_STRUCT_TYPE nestedStruct : TEXCOORD56;
+    noperspective float frustumCorrection : TEXCOORD40;
+    float3 rayDir : TEXCOORD41;
+
+    noperspective float2 screenPosition : TEXCOORD42;
+
+    nointerpolation  float zoomX : TEXCOORD43;
+    nointerpolation  float zoomY : TEXCOORD44;
+    nointerpolation  float frustumNearZ : TEXCOORD45;
+    nointerpolation  float frustumFarZ : TEXCOORD46;
+    nointerpolation  float invBeamLength : TEXCOORD47;
+    
+    nointerpolation  float frustumOffset : TEXCOORD48;
+    nointerpolation  float3 rayOrigin  : TEXCOORD49;
+    nointerpolation  float3 colorGobo : TEXCOORD50;
+    nointerpolation  float3 colorVolume : TEXCOORD51;
+    nointerpolation  float4 clipPlane : TEXCOORD52;
+    nointerpolation  float4 aniso : TEXCOORD53;
+    nointerpolation  float falloff : TEXCOORD54;
+    NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
+
+    noperspective float DepthFadeData : TEXCOORD56;
 };
 
 float inverselerp(float from, float to, float value)
@@ -205,17 +209,13 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 
     float3 rayDir = normalize(worldPos - _WorldSpaceCameraPos);
     float3 rayOrigin = _WorldSpaceCameraPos;
-    float3 cameraForward = unity_CameraToWorld._m02_m12_m22;
 
     float3 objectPos = mul(unity_ObjectToWorld, float4(0, 0, 0, 1));
 
-    beam.cameraForward = WorldToFrustumVector(apex, forward, right, up, cameraForward);
+    float3 cameraForward = WorldToFrustumVector(apex, forward, right, up, unity_CameraToWorld._m02_m12_m22);
 
     beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
-    beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
-    
-    beam.colorGobo = color * brightnessGobo * 1;
-    beam.colorVolume = color * brightnessVolume * 0.1;
+    float3 worldPosLocal = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
     
     float e = 0.01;
     float Aa = 1.0 + e;
@@ -223,7 +223,11 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 q = float3(1.0, 2.0, 3.0) - p;
     float3 G = (pow(Aa, q) - pow(e, q)) / q;
     float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
-    beam.falloffNorm = 3.198 / I;
+    float falloffNorm = 3.198 / I;
+
+    beam.colorGobo = color * brightnessGobo * 1;
+    beam.colorVolume = color * brightnessVolume * 0.1 * falloffNorm;
+    
 
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)
@@ -270,7 +274,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
             beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
             beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
             beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
-            beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
+            worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
         }
     }
 
@@ -289,11 +293,29 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
             -d);
         float3 wp = mul(UNITY_MATRIX_I_V, float4(viewPos, 1)).xyz;
     
-        beam.worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, wp);
+        worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, wp);
         beam.screenPosition    = ComputeScreenPos(beam.vertex).xy;
         beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     }
+    
+    beam.rayDir = (worldPosLocal - beam.rayOrigin);
 
+    beam.DepthFadeData = UNITY_MATRIX_P._34 / dot(cameraForward, beam.rayDir);
+
+    beam.frustumCorrection *= UNITY_MATRIX_P._34;
+    beam.frustumCorrection /= beam.vertex.w;
+    beam.screenPosition /= beam.vertex.w;
+
+    float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
+    float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
+    float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
+    float4 topPlane    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
+    float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
+    float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
+    
+    float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
+
+    beam.invBeamLength = 1/abs(frustumNearZ - frustumFarZ);
     return beam;
  }
 
@@ -306,14 +328,14 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
     #if 1
         float tex_size = start_size * end_size;
 
-        float2 posF          = saturate(start) * (start_size - 1);
-        float2 cell          = min(floor(posF), start_size - 2);
+        float2 posF          = saturate(start) * (start_size - 1.001);
+        float2 cell          = floor(posF);
         float2 chunkblend    = posF - cell;
         float2 chunkblendInv = 1 - chunkblend;
         float2 chunk         = cell * end_size;
         
-        float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-        
+        float2 base = chunk + saturate(end) * (end_size - 1) + 0.5;
+
         #ifdef LUTBEAM_CALLBACK_VOLUME
             #ifdef CUSTOM_STRUCT_EXISTS
                 float3 s0 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(0,        0))        / tex_size, nestedStruct);
@@ -327,8 +349,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
                 float3 s3 = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, (base + float2(end_size, end_size)) / tex_size);
             #endif
 
-            return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y
-                + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+            return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
         #else
             return 1;
         #endif
@@ -345,7 +366,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, NESTED_STRUCT_TYPE ne
         float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
 
         #ifdef LUTBEAM_CALLBACK_VOLUME
-            #ifdef NESTED_STRUCT_TYPE
+            #ifdef CUSTOM_STRUCT_EXISTS
                 float3 goboResult = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, base / tex_size, nestedStruct);
             #else
                 float3 goboResult = LUTBEAM_CALLBACK_VOLUME(_SamplerClampLinear, base / tex_size);
@@ -363,21 +384,17 @@ float3 LUTBeamFrag(BeamData beam)
     float beamFalloff = beam.falloff;
     float frustumNearZ = beam.frustumNearZ;
     float frustumFarZ = beam.frustumFarZ;
+    float invBeamLength = beam.invBeamLength;
     float frustumOffset = beam.frustumOffset;
 
-    float3 view_delta = beam.worldPosLocal - beam.rayOrigin;
-    float sq_view_dist = dot(view_delta, view_delta);
-    float view_dist = sqrt(sq_view_dist);
-
-    float3 cameraForward = beam.cameraForward;
-    float3 rayDir = view_delta / view_dist;
+    float3 rayDir = beam.rayDir;
     float3 rayOrigin = beam.rayOrigin;
 
-    float2 suv = beam.screenPosition.xy / beam.vertex.w;
-
-    float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
-    float SceneDistance = CorrectedLinearEyeDepth(raw_dist, beam.frustumCorrection / beam.vertex.w) / dot(cameraForward, rayDir);
+    float2 suv = beam.screenPosition.xy;
     
+    float raw_dist = SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, suv);
+    float SceneDistance = beam.DepthFadeData / (raw_dist + beam.frustumCorrection);
+
     #if LUTBEAM_AVATAR
         SceneDistance = 9999999;
     #endif
@@ -393,37 +410,53 @@ float3 LUTBeamFrag(BeamData beam)
     float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
     float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
     
-    float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
+    float4 planes[5] = { leftPlane, rightPlane, bottomPlane, topPlane, beam.clipPlane };
 
     float tMin = -1e30;
     float tMax = 1e30;
 
-    [unroll]
-    for(int i = 0; i < 7; i++)
-    {
-        float denom = dot(planes[i].xyz, rayDir);
-        float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+    float invDz = rcp(rayDir.z);
+    float t4 =  (nearPlane.w - dot(nearPlane.xyz, beam.rayOrigin)) * invDz;
+    float t5 = -(farPlane.w - dot(farPlane.xyz, beam.rayOrigin)) * invDz;
+    tMin = max(tMin, min(t4, t5));
+    tMax = min(tMax, max(t4, t5));
 
-        if (denom < 0)
-            tMin = max(tMin, t);
-        else
-            tMax = min(tMax, t);
+    if (_VRChatMirrorMode != 0)
+    {
+        [unroll]
+        for(int i = 0; i < 5; i++)
+        {
+            float denom = dot(planes[i].xyz, rayDir);
+            float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+
+            if (denom < 0)
+                tMin = max(tMin, t);
+            else
+                tMax = min(tMax, t);
+        }
+    }
+    else
+    {
+        [unroll]
+        for(int i = 0; i < 4; i++)
+        {
+            float denom = dot(planes[i].xyz, rayDir);
+            float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+
+            if (denom < 0)
+                tMin = max(tMin, t);
+            else
+                tMax = min(tMax, t);
+        }
     }
     
-    #ifdef LUTBEAM_CALLBACK_DEPTH
-        #ifdef NESTED_STRUCT_TYPE
-            LUTBEAM_CALLBACK_DEPTH(tMin, tMax, nestedStruct);
-        #else
-            LUTBEAM_CALLBACK_DEPTH(tMin, tMax);
-        #endif
-    #endif
-    
+
     float entryDistance = max(0, tMin);
     float exitDistance = max(0, tMax);
     
     bool hit = (exitDistance > SceneDistance);
 
-    if(SceneDistance < 0.001)
+    if(SceneDistance < 0.000001)
         hit = false;
 
     // NOTE(valuef): Regarding the if: Only clamp when the pixel depth isn't approaching the far plane.
@@ -436,7 +469,7 @@ float3 LUTBeamFrag(BeamData beam)
         exitDistance = min(exitDistance, SceneDistance);
     }
 
-    if(exitDistance - entryDistance < 0.01)
+    if(exitDistance - entryDistance < 0.000001)
         discard;
     
     float3 entryPos = rayOrigin + rayDir * entryDistance;
@@ -444,11 +477,10 @@ float3 LUTBeamFrag(BeamData beam)
     
     entryPos.xyz = -entryPos.zxy;
     exitPos.xyz = -exitPos.zxy;
-    
 
     float3 entryNormalized = entryPos.yzx;
     float3 exitNormalized = exitPos.yzx;
-    
+
     entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
     entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
     entryNormalized.xy = entryNormalized.xy + 0.5;
@@ -471,11 +503,11 @@ float3 LUTBeamFrag(BeamData beam)
     float distToSource = length(closest);
 
     // Normalize to 0-1
-    t = saturate(inverselerp(frustumNearZ-0.06, frustumFarZ, distToSource + frustumNearZ));
+    t = saturate((distToSource + 0.06) * beam.invBeamLength);
 
     float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
     float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
-    float3 volColor = volFac * beam.colorVolume * beam.falloffNorm;
+    float3 volColor = volFac * beam.colorVolume;
 
     // early out if the fade would kill the anyways
     if(volFac < 0.001)
@@ -483,7 +515,7 @@ float3 LUTBeamFrag(BeamData beam)
 
     col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy, beam.nestedStruct);
 
-     col *= volColor;
+    col *= volColor;
 
     // gobo on the surface
     if(hit && (any(beam.colorGobo)))
