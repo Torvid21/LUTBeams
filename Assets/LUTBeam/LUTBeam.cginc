@@ -144,6 +144,7 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
     float3 forward  = float3(0, 0, -1);
     
     float3 corrected_pos = 0;
+    float3 frustumOffsetVector = float3(0, 0, frustumOffset);
 
     #ifdef LUTBEAM_CALLBACK_VERTEX
         corrected_pos = LUTBEAM_CALLBACK_VERTEX(float3(0, 0, 0));
@@ -151,8 +152,9 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
         forward = LUTBEAM_CALLBACK_VERTEX(forward) - corrected_pos;
         right = LUTBEAM_CALLBACK_VERTEX(right) - corrected_pos;
         up = LUTBEAM_CALLBACK_VERTEX(up) - corrected_pos;
+        frustumOffsetVector = LUTBEAM_CALLBACK_VERTEX(frustumOffsetVector) - corrected_pos;
     #endif
-
+        
     forward = normalize(mul(unity_ObjectToWorld, float4(forward, 0)).xyz);
     right = normalize(mul(unity_ObjectToWorld, float4(right, 0)).xyz);
     up = normalize(mul(unity_ObjectToWorld, float4(up, 0)).xyz);
@@ -162,8 +164,8 @@ BeamData LUTBeamVert(float4 vertexPos, float zoomX, float zoomY, float farz, flo
 
     beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
 
-    float3 apex = mul(unity_ObjectToWorld, float4(corrected_pos + float3(0, 0, frustumOffset), 1)).xyz;
-
+    float3 apex = mul(unity_ObjectToWorld, float4(corrected_pos + frustumOffsetVector, 1)).xyz;
+    
     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     beam.frustumNearZ  = frustumNearZ;
     beam.frustumFarZ   = frustumFarZ;
