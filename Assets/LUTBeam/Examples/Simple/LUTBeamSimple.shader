@@ -13,8 +13,24 @@ Shader "LUTBeam/Simple"
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
         _Frost ("_Frost", Range(0, 1.0)) = 0
             
+        [Header(Framing 0)]
+        _Framing0A ("_Framing0A", Range(-1, 1.0)) = 0
+        _Framing0B ("_Framing0B", Range(-1, 1.0)) = 0
+        [Header(Framing 1)]
+        _Framing1A ("_Framing1A", Range(-1, 1.0)) = 0
+        _Framing1B ("_Framing1B", Range(-1, 1.0)) = 0
+        [Header(Framing 2)]
+        _Framing2A ("_Framing2A", Range(-1, 1.0)) = 0
+        _Framing2B ("_Framing2B", Range(-1, 1.0)) = 0
+        [Header(Framing 3)]
+        _Framing3A ("_Framing3A", Range(-1, 1.0)) = 0
+        _Framing3B ("_Framing3B", Range(-1, 1.0)) = 0
+
+        _FramingAngle ("_FramingAngle", Range(0, 10.0)) = 0
+
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
         _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
@@ -75,24 +91,26 @@ Shader "LUTBeam/Simple"
             float _BeamIntensity;
             float _BeamFalloff;
             float _Frost;
-
-            float Lerp4(float4 c, float t)
-            {
-                float x = saturate(t) * 3.0;
-                return lerp(lerp(lerp(c.r, c.g, saturate(x)), c.b, saturate(x - 1)), c.a, saturate(x - 2));
-            }
+            float _Focus;
+            float _Framing0A;
+            float _Framing0B;
+            float _Framing1A;
+            float _Framing1B;
+            float _Framing2A;
+            float _Framing2B;
+            float _Framing3A;
+            float _Framing3B;
+            float _FramingAngle;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                float4 result = _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Frost);
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                float4 result = _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Frost);
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             #include "Assets/LUTBeam/LUTBeam.cginc"
@@ -126,10 +144,10 @@ Shader "LUTBeam/Simple"
 
                 // simulate dimming that happens when the gobo is zoomed out
                 float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(length(float2(_ZoomX, _ZoomY))*0.5), 5));
-
+                float FocusZoomExtra = _Focus*0.1;
                 // make sure you feed in v.vertex from the unity default cube here directly without modifying it
                 // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, _ZoomX+FocusZoomExtra, _ZoomY+FocusZoomExtra, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff, _Focus);
 
                 return o;
             }

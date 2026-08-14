@@ -36,15 +36,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _Gobo: 4
+    - _Gobo: 2
     m_Floats:
     - _: 1
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 1
+    - _BeamFalloff: 0.42
     - _BeamHotness: 0
-    - _BeamIntensity: 2.57
+    - _BeamIntensity: 0.55
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -59,9 +59,10 @@ Material:
     - _FarZ: 25
     - _FarZMaxZoom: 10
     - _Focus: 0
+    - _Frost: 0
     - _Gobo: 3.92
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 3.48
+    - _GoboIntensity: 8
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
