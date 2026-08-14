@@ -43,92 +43,153 @@ public class LUTBeamManager : MonoBehaviour
     public int LUTResolution = 1024;
     public int GoboResolution = 512;
 
+    bool IsPowerOfTwo(int x)
+    {
+        return (x & (x - 1)) == 0;
+    }
+
+
+    string[] funnyProgressText = new string[]
+    {
+        "Generating...",
+    };
+
+    void SetProgress(float progress)
+    {
+        EditorUtility.DisplayProgressBar("LUT Beams", "Generating...", progress);
+    }
+
     [ContextMenu("Generate Texture Array")]
     public void _GenerateTextureArray()
     {
+        SetProgress(0);
+
+        if (!IsPowerOfTwo(GoboResolution))
+            return;
+
+        if (!IsPowerOfTwo(LUTResolution))
+            return;
+
+        // calculate mip count.
+        // lowest resolution BC4 supports is 4x4 so stop there.
+
+        int goboMipCount = 0;
+        int GoboRes = GoboResolution;
+        while (GoboRes > 4) { GoboRes /= 2; goboMipCount++; }
+
+        int lutMipCount = 0;
+        int LUTRes = LUTResolution;
+        while (LUTRes > 4) { LUTRes /= 2; lutMipCount++; }
+
         for (int i = 0; i < goboArray.Length; i++)
         {
+
             Texture[] gobos = goboArray[i].gobos;
             string prefix = goboArray[i].name;
 
             if (gobos.Length == 0)
                 continue;
 
-            Texture2D[] goboTextures = new Texture2D[gobos.Length];
-            Texture2D[] lutTextures = new Texture2D[gobos.Length];
+            Texture2D[][] goboTextures = new Texture2D[gobos.Length][];
+            Texture2D[][] lutTextures = new Texture2D[gobos.Length][];
 
             Material material = new Material(Shader.Find("LUTBeam/GoboLookupGenerator"));
 
             for (int q = 0; q < gobos.Length; q++)
             {
+                SetProgress(q / (float)gobos.Length);
+
                 if (!(gobos[q] is Texture2D))
                     continue;
 
-                Texture2D Gobo = gobos[q] as Texture2D;
+                Texture2D InputGobo = gobos[q] as Texture2D;
 
-                if (!Gobo)
+                if (!InputGobo)
                     return;
 
-                RenderTexture tempRTLut = new RenderTexture(LUTResolution, LUTResolution, 32, RenderTextureFormat.ARGBFloat);
-                RenderTexture tempRTGobo = new RenderTexture(GoboResolution, GoboResolution, 32, RenderTextureFormat.ARGBFloat);
+                goboTextures[q] = new Texture2D[goboMipCount];
+                lutTextures[q] = new Texture2D[lutMipCount];
 
-                material.SetTexture("_MainTex", Gobo);
-                // Also allow the shader to process the gobo itself, if desired.
-                Shader.SetGlobalFloat("_EnableBake_Gobo", 1);
-                Graphics.Blit(null, tempRTGobo, material);
-                Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
+                for (int mip = 0; mip < goboMipCount; mip++)
+                {
+                    int res = Mathf.Max(1, GoboResolution >> mip);
+                    RenderTexture tempRTGobo = new RenderTexture(res, res, 32, RenderTextureFormat.ARGBFloat);
 
-                RenderTexture.active = tempRTGobo;
-                Texture2D texGobo = new Texture2D(GoboResolution, GoboResolution, TextureFormat.RGBAFloat, false);
-                texGobo.ReadPixels(new Rect(0, 0, GoboResolution, GoboResolution), 0, 0);
-                texGobo.Apply();
-                RenderTexture.active = null;
+                    material.SetTexture("_MainTex", mip == 0 ? InputGobo : goboTextures[q][mip - 1]);
+                    Shader.SetGlobalFloat("_MipLevel", mip);
+                    Shader.SetGlobalFloat("_EnableBake_Gobo", 1);
+                    Graphics.Blit(null, tempRTGobo, material);
+                    Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
+                    Shader.SetGlobalFloat("_MipLevel", 0);
 
-                goboTextures[q] = texGobo;
+                    RenderTexture.active = tempRTGobo;
+                    Texture2D texGobo = new Texture2D(res, res, TextureFormat.RGBAFloat, false);
+                    texGobo.ReadPixels(new Rect(0, 0, res, res), 0, 0);
+                    texGobo.Apply();
+                    RenderTexture.active = null;
 
-                material.SetTexture("_MainTex", texGobo);
+                    goboTextures[q][mip] = texGobo;
+                }
 
-                // Enable supersampling mode of the baker because it makes it look way better!
-                Shader.SetGlobalFloat("_EnableBake_Supersample", 1);
-                Graphics.Blit(null, tempRTLut, material);
-                Shader.SetGlobalFloat("_EnableBake_Supersample", 0);
+                // Generate the whole LUT mip chain, mip 0 first
+                for (int mip = 0; mip < lutMipCount; mip++)
+                {
+                    int res = Mathf.Max(1, LUTResolution >> mip);
+                    RenderTexture tempRTLut = new RenderTexture(res, res, 32, RenderTextureFormat.ARGBFloat);
 
-                RenderTexture.active = tempRTLut;
-                Texture2D texLut = new Texture2D(LUTResolution, LUTResolution, TextureFormat.RGBAFloat, false);
-                texLut.ReadPixels(new Rect(0, 0, LUTResolution, LUTResolution), 0, 0);
-                texLut.Apply();
-                RenderTexture.active = null;
+                    material.SetTexture("_MainTex", goboTextures[q][Mathf.Min(goboMipCount-1, mip)]); // goboTextures[q][mip]
+                    Shader.SetGlobalFloat("_MipLevel", mip);
 
+                    // Enable supersampling mode of the baker because it makes it look way better!
+                    Shader.SetGlobalFloat("_EnableBake_Supersample", 1);
+                    Graphics.Blit(null, tempRTLut, material);
+                    Shader.SetGlobalFloat("_EnableBake_Supersample", 0);
+                    Shader.SetGlobalFloat("_MipLevel", 0);
+
+                    RenderTexture.active = tempRTLut;
+                    Texture2D texLut = new Texture2D(res, res, TextureFormat.RGBAFloat, false);
+                    texLut.ReadPixels(new Rect(0, 0, res, res), 0, 0);
+                    texLut.Apply();
+                    RenderTexture.active = null;
+
+                    lutTextures[q][mip] = texLut;
+                }
 
                 // Convert linear to srgb in the texture
-                for (int x = 0; x < GoboResolution; x++)
+                for (int mip = 0; mip < goboMipCount; mip++)
                 {
-                    for (int y = 0; y < GoboResolution; y++)
+                    Texture2D texGobo = goboTextures[q][mip];
+                    for (int x = 0; x < texGobo.width; x++)
                     {
-                        Color c = texGobo.GetPixel(x, y);
-                        c.r = Mathf.LinearToGammaSpace(c.r);
-                        c.g = Mathf.LinearToGammaSpace(c.g);
-                        c.b = Mathf.LinearToGammaSpace(c.b);
-                        texGobo.SetPixel(x, y, c);
+                        for (int y = 0; y < texGobo.height; y++)
+                        {
+                            Color c = texGobo.GetPixel(x, y);
+                            c.r = Mathf.LinearToGammaSpace(c.r);
+                            c.g = Mathf.LinearToGammaSpace(c.g);
+                            c.b = Mathf.LinearToGammaSpace(c.b);
+                            texGobo.SetPixel(x, y, c);
+                        }
                     }
+                    texGobo.Apply();
                 }
-                texGobo.Apply();
 
                 // Convert linear to srgb in the texture
-                for (int x = 0; x < LUTResolution; x++)
+                for (int mip = 0; mip < lutMipCount; mip++)
                 {
-                    for (int y = 0; y < LUTResolution; y++)
+                    Texture2D texLut = lutTextures[q][mip];
+                    for (int x = 0; x < texLut.width; x++)
                     {
-                        Color c = texLut.GetPixel(x, y);
-                        c.r = Mathf.LinearToGammaSpace(c.r);
-                        c.g = Mathf.LinearToGammaSpace(c.g);
-                        c.b = Mathf.LinearToGammaSpace(c.b);
-                        texLut.SetPixel(x, y, c);
+                        for (int y = 0; y < texLut.height; y++)
+                        {
+                            Color c = texLut.GetPixel(x, y);
+                            c.r = Mathf.LinearToGammaSpace(c.r);
+                            c.g = Mathf.LinearToGammaSpace(c.g);
+                            c.b = Mathf.LinearToGammaSpace(c.b);
+                            texLut.SetPixel(x, y, c);
+                        }
                     }
+                    texLut.Apply();
                 }
-                texLut.Apply();
-
-                lutTextures[q] = texLut;
             }
 
             Scene scene = SceneManager.GetActiveScene();
@@ -136,19 +197,27 @@ public class LUTBeamManager : MonoBehaviour
             if (!Directory.Exists(AutoGenerateDirectory))
                 Directory.CreateDirectory(AutoGenerateDirectory);
 
-            Texture2DArray texArray = new Texture2DArray(GoboResolution, GoboResolution, gobos.Length, format, false, false);
-            Texture2DArray lutArray = new Texture2DArray(LUTResolution, LUTResolution, gobos.Length, format, false, false);
+            Texture2DArray texArray = new Texture2DArray(GoboResolution, GoboResolution, gobos.Length, format, goboMipCount, false);
+            Texture2DArray lutArray = new Texture2DArray(LUTResolution, LUTResolution, gobos.Length, format, lutMipCount, false);
 
-            int mip = 0;
+            SetProgress(0.25f);
             for (int j = 0; j < gobos.Length; j++)
             {
-                EditorUtility.CompressTexture(goboTextures[j], format, TextureCompressionQuality.Best);
-                Graphics.CopyTexture(goboTextures[j], 0, mip, texArray, j, mip);
+                //SetProgress((float)i / (float)gobos.Length);
+                for (int mip = 0; mip < goboMipCount; mip++)
+                {
+                    EditorUtility.CompressTexture(goboTextures[j][mip], format, TextureCompressionQuality.Best);
+                    Graphics.CopyTexture(goboTextures[j][mip], 0, 0, texArray, j, mip);
+                }
 
-                EditorUtility.CompressTexture(lutTextures[j], format, TextureCompressionQuality.Best);
-                Graphics.CopyTexture(lutTextures[j], 0, mip, lutArray, j, mip);
+                for (int mip = 0; mip < lutMipCount; mip++)
+                {
+                    EditorUtility.CompressTexture(lutTextures[j][mip], format, TextureCompressionQuality.Best);
+                    Graphics.CopyTexture(lutTextures[j][mip], 0, 0, lutArray, j, mip);
+                }
             }
 
+            SetProgress(0.5f);
 
             string texArrayFilePath = $"{AutoGenerateDirectory}/{scene.name} - Gobo Textures.asset";
             string lutArrayFilePath = $"{AutoGenerateDirectory}/{scene.name} - LUT Textures.asset";
@@ -183,11 +252,14 @@ public class LUTBeamManager : MonoBehaviour
                 AssetDatabase.CreateAsset(lutArray, lutArrayFilePath);
             }
 
+            SetProgress(0.8f);
             AssetDatabase.SaveAssets();
 
             EditorGUIUtility.PingObject(lutArray);
 
         }
+
+        EditorUtility.ClearProgressBar();
     }
 #endif
 
