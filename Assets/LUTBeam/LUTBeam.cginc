@@ -382,14 +382,12 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     
     float4 planes[5] = { leftPlane, rightPlane, bottomPlane, topPlane, beam.clipPlane };
 
-    float tMin = -1e30;
-    float tMax = 1e30;
-
+    // Near plane and far plane are parallel, so we can do the angle math just once for them :>
     float invDz = rcp(rayDir.z);
     float t4 =  (nearPlane.w - dot(nearPlane.xyz, beam.rayOrigin)) * invDz;
     float t5 = -(farPlane.w - dot(farPlane.xyz, beam.rayOrigin)) * invDz;
-    tMin = max(tMin, min(t4, t5));
-    tMax = min(tMax, max(t4, t5));
+    float tMin = min(t4, t5);
+    float tMax = max(t4, t5);
 
     if (_VRChatMirrorMode != 0)
     {
@@ -419,37 +417,27 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
                 tMax = min(tMax, t);
         }
     }
-    
 
-    float entryDistance = max(0, tMin);
-    float exitDistance = max(0, tMax);
+    tMin = max(0, tMin);
+    tMax = max(0, tMax);
     
-    bool hit = (exitDistance > SceneDistance);
-
-    if(SceneDistance < 0.000001)
-        hit = false;
+    bool hit = (tMax > SceneDistance) && (SceneDistance > 0.000001);
 
     // NOTE(valuef): Regarding the if: Only clamp when the pixel depth isn't approaching the far plane.
     // This should only be false in mirrors due to the oblique frustum correction when the pixel we're drawing
     // hasn't had any depth written to it.
     // 2025-09-23
-    if(SceneDistance >= 0)
+    if(SceneDistance > 0.000001)
     {
-        entryDistance = min(entryDistance, SceneDistance);
-        exitDistance = min(exitDistance, SceneDistance);
+        tMin = min(tMin, SceneDistance);
+        tMax = min(tMax, SceneDistance);
     }
 
-    if(exitDistance - entryDistance < 0.000001)
-        discard;
+    float3 entryPos = (rayOrigin + rayDir * tMin);
+    float3 exitPos = (rayOrigin + rayDir * tMax);
     
-    float3 entryPos = rayOrigin + rayDir * entryDistance;
-    float3 exitPos = rayOrigin + rayDir * exitDistance;
-    
-    entryPos.xyz = -entryPos.zxy;
-    exitPos.xyz = -exitPos.zxy;
-
-    float3 entryNormalized = entryPos.yzx;
-    float3 exitNormalized = exitPos.yzx;
+    float3 entryNormalized = -entryPos.xyz;
+    float3 exitNormalized  = -exitPos.xyz;
 
     entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
     entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
@@ -464,22 +452,22 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     float falloff = 10;
 
     // closest point on ray
-    float3 A  = entryPos - float3(frustumNearZ, 0, 0);
-    float3 B  = exitPos  - float3(frustumNearZ, 0, 0);
+    float3 A  = (entryPos) - float3(0, 0, -frustumNearZ);
+    float3 B  = (exitPos)  - float3(0, 0, -frustumNearZ);
     float3 AB = B - A;
     float  d2 = max(dot(AB, AB), 1e-5);
     float  ct = saturate(dot(-A, AB) / d2);
     float3 closest = A + ct * AB;
     float distToSource = length(closest);
-
+    
     // Normalize to 0-1
     t = saturate((distToSource + 0.06) * beam.invBeamLength);
-
+    
     float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
     float volFacNotHot = (1 - t) * (1 - t) * pow(t + 0.01, -1);
     float3 volColor = volFac * beam.colorVolume;
 
-    // early out if the fade would kill the anyways
+    // early out if the fade would make it invisible anyways
     if(volFac < 0.001)
         discard;
 
@@ -499,6 +487,7 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
         #else
             float3 goboResult = float3(1, 1, 1);
         #endif
+
         // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
         if(any(goboResult))
         {

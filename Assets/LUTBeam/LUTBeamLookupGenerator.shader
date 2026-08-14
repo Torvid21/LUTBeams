@@ -71,11 +71,10 @@ Shader "LUTBeam/GoboLookupGenerator" {
 
             float4 SampleGobo(float2 uv)
             {
-                uv = (uv-0.5) * 1.1 + 0.5;
                 uv = saturate(uv);
                 return tex2Dlod(_MainTex, float4(uv, 0, 0)) * tex2Dlod(_Mask, float4(uv, 0, 0));
             }
-
+            
             float4 frag(v2f input) : SV_Target
             {
                 if(_EnableBake_Gobo > 0.5)
@@ -84,10 +83,10 @@ Shader "LUTBeam/GoboLookupGenerator" {
 		            float4 result = 0;
 		            for (int i = 0; i < samples; i++)
 		            {
-			            result.r += SampleGobo(input.uv + SpiralBlurUVOffset(0.00*0.125, samples, i)).r;
-			            result.g += SampleGobo(input.uv + SpiralBlurUVOffset(0.50*0.125, samples, i)).r;
-			            result.b += SampleGobo(input.uv + SpiralBlurUVOffset(0.70*0.125, samples, i)).r*0.9;
-			            result.a += SampleGobo(input.uv + SpiralBlurUVOffset(1.00*0.125, samples, i)).r*0.8;
+			            result.r += SampleGobo(((input.uv-0.5) * 1.1 + 0.5) + SpiralBlurUVOffset(0.00*0.125, samples, i)).r;
+			            result.g += SampleGobo(((input.uv-0.5) * 1.1 + 0.5) + SpiralBlurUVOffset(0.50*0.125, samples, i)).r;
+			            result.b += SampleGobo(((input.uv-0.5) * 1.1 + 0.5) + SpiralBlurUVOffset(0.70*0.125, samples, i)).r*0.9;
+			            result.a += SampleGobo(((input.uv-0.5) * 1.1 + 0.5) + SpiralBlurUVOffset(1.00*0.125, samples, i)).r*0.8;
 		            }
 		            result /= ((float)samples);
 		            return result;
