@@ -13,23 +13,7 @@ Shader "LUTBeam/Simple"
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         [IntRange] _Gobo ("Gobo Index", Range(0,16)) = 0
-        _Focus ("_Focus", Range(0, 1.0)) = 0
-        _Focus_Aperture ("_Focus_Aperture", Range(0, 1.0)) = 1
-        _Frost ("_Frost", Range(0, 1.0)) = 0
         
-        [Header(Framing 0)]
-        _Framing0A ("_Framing0A", Range(0, 1.0)) = 0
-        _Framing0B ("_Framing0B", Range(0, 1.0)) = 0
-        [Header(Framing 1)]
-        _Framing1A ("_Framing1A", Range(0, 1.0)) = 0
-        _Framing1B ("_Framing1B", Range(0, 1.0)) = 0
-        [Header(Framing 2)]
-        _Framing2A ("_Framing2A", Range(0, 1.0)) = 0
-        _Framing2B ("_Framing2B", Range(0, 1.0)) = 0
-        [Header(Framing 3)]
-        _Framing3A ("_Framing3A", Range(0, 1.0)) = 0
-        _Framing3B ("_Framing3B", Range(0, 1.0)) = 0
-
         _FramingAngle ("_FramingAngle", Range(0, 10.0)) = 0
 
         [Header(Color)]
@@ -38,9 +22,29 @@ Shader "LUTBeam/Simple"
         _BeamFalloff ("_BeamFalloff", Range(0, 4.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 16.0)) = 1
         
-        [Header(Extra stuff)]
-        [Toggle(LUTBEAM_FRAMING)] _FramingEnabled ("Framing Shutters", Float) = 0
-        [Toggle(LUTBEAM_FOCUS)]   _FrostEnabled   ("Frost / Focus",    Float) = 0
+        [Header(Focus)]
+        [Toggle(LUTBEAM_FOCUS)]   _FocusEnabled   ("Enable",    Float) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Focus_ApertureSize ("_Focus_ApertureSize", Range(0, 1.0)) = 1
+        _Frost ("_Frost", Range(0, 1.0)) = 0
+
+            
+        [Header(Framing Shutters)]
+        [Toggle(LUTBEAM_FRAMING)] _FramingEnabled ("Enable", Float) = 0
+            
+        //[Header(Framing 0)]
+        _Framing0A ("_Framing0A", Range(0, 1.0)) = 0
+        _Framing0B ("_Framing0B", Range(0, 1.0)) = 0
+        //[Header(Framing 1)]
+        _Framing1A ("_Framing1A", Range(0, 1.0)) = 0
+        _Framing1B ("_Framing1B", Range(0, 1.0)) = 0
+        //[Header(Framing 2)]
+        _Framing2A ("_Framing2A", Range(0, 1.0)) = 0
+        _Framing2B ("_Framing2B", Range(0, 1.0)) = 0
+        //[Header(Framing 3)]
+        _Framing3A ("_Framing3A", Range(0, 1.0)) = 0
+        _Framing3B ("_Framing3B", Range(0, 1.0)) = 0
+
 
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
@@ -98,7 +102,7 @@ Shader "LUTBeam/Simple"
             float _BeamIntensity;
             float _BeamFalloff;
             float _Focus;
-            float _Focus_Aperture;
+            float _Focus_ApertureSize;
             float _Frost;
             float _Framing0A;
             float _Framing0B;
@@ -138,7 +142,6 @@ Shader "LUTBeam/Simple"
             struct v2f
             {
                 BeamData beam;
-
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -163,7 +166,7 @@ Shader "LUTBeam/Simple"
                 settings.brightnessGobo = _GoboIntensity;
                 settings.beamFalloff = _BeamFalloff;
                 settings.focus = _Focus;
-                settings.focus_aperture = _Focus_Aperture;
+                settings.focus_apertureSize = _Focus_ApertureSize;
                 settings.frost = _Frost;
                 settings.framing0A = _Framing0A;
                 settings.framing0B = _Framing0B;

@@ -49,6 +49,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
             float _RayAngle;
             float _AspectRatio;
             float _MipLevel;
+            float _BlurStrength;
             Texture2D _PreviousMip;
 
             v2f vert (appdata v)
@@ -85,7 +86,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
             // zoom the UV in a little so the blur doesn't kill us.
             float2 scaledUV(float2 uv)
             {
-                return (uv-0.5) * 1.25 + 0.5;
+                return (uv-0.5) * 1.15 + 0.5;
             }
             float4 frag(v2f input) : SV_Target
             {
@@ -104,11 +105,11 @@ Shader "LUTBeam/GoboLookupGenerator" {
 		                for (int i = 0; i < samples; i++)
 		                {
                             float r0 = 0;
-                            float r1 = r0 + 0.01;
-                            float r2 = r1 + 0.01;
-                            float r3 = r2 + 0.01;
-                            float r4 = r3 + 0.01;
-                            float r5 = r4 + 0.01;
+                            float r1 = r0 + _BlurStrength;
+                            float r2 = r1 + _BlurStrength;
+                            float r3 = r2 + _BlurStrength;
+                            float r4 = r3 + _BlurStrength;
+                            float r5 = r4 + _BlurStrength;
                             float weight = SpiralBlurWeight(i, samples);
                             if      (_MipLevel == 1) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r1, samples, i), 0, 0)) * weight;
                             else if (_MipLevel == 2) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r2, samples, i), 0, 0)) * weight;

@@ -33,7 +33,7 @@ struct BeamSettings
     float brightnessGobo;
     float beamFalloff;
     float focus;
-    float focus_aperture;
+    float focus_apertureSize;
     float frost;
     float framing0A;
     float framing0B;
@@ -73,7 +73,7 @@ struct BeamData
 
 #if LUTBEAM_FOCUS
     nointerpolation float focus : TEXCOORD57;
-    nointerpolation float focus_aperture : TEXCOORD64;
+    nointerpolation float focus_apertureSize : TEXCOORD64;
     nointerpolation float frost : TEXCOORD58;
 #endif
 
@@ -189,7 +189,7 @@ BeamSettings DefaultBeamSettings()
     settings.brightnessGobo = 4;
     settings.beamFalloff = 2;
     settings.focus = 0;
-    settings.focus_aperture = 1;
+    settings.focus_apertureSize = 1;
     settings.frost = 0;
     settings.framing0A = 0;
     settings.framing0B = 0;
@@ -207,63 +207,53 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
 {
     BeamData beam = (BeamData)0;
     
-    float zoomX             = settings.zoomX;
-    float zoomY             = settings.zoomY;
-    float farz              = settings.farz;
-    float nearSizeX         = settings.nearSizeX;
-    float nearSizeY         = settings.nearSizeY;
-    float offset            = settings.offset;
-    float3 color            = settings.color;
-    float brightnessVolume  = settings.brightnessVolume;
-    float brightnessGobo    = settings.brightnessGobo;
-    float beamFalloff       = settings.beamFalloff;
-    float focus             = settings.focus;
-    float frost             = settings.frost;
+    beam.zoomX = settings.zoomX;
+    beam.zoomY = settings.zoomY;
 
     float pi = 3.1415926535897;
-    float ex = nearSizeX + zoomX * farz;
-    float ey = nearSizeY + zoomY * farz;
+    float ex = settings.nearSizeX + beam.zoomX * settings.farz;
+    float ey = settings.nearSizeY + beam.zoomY * settings.farz;
     float minWidth = 0.05;
-    color *= 2 / pow(ex * ey + minWidth, 0.7);
+    settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
 
 #if LUTBEAM_FOCUS
-    float FocusZoomExtra = settings.focus*0.05 * settings.focus_aperture;
-    zoomX += FocusZoomExtra;
-    zoomY += FocusZoomExtra;
-    beam.focus = focus;
-    beam.frost = frost;
-    beam.focus_aperture = settings.focus_aperture;
+    beam.focus = settings.focus;
+    beam.frost = settings.frost;
+    float FocusZoomExtra = beam.focus*0.05 * settings.focus_apertureSize;
+    beam.zoomX += FocusZoomExtra;
+    beam.zoomY += FocusZoomExtra;
+    beam.focus = beam.focus;
+    beam.frost = beam.frost;
+    beam.focus_apertureSize = settings.focus_apertureSize;
 #endif
 
-    if ((!any(color)) || (brightnessVolume <= 0 && brightnessGobo <= 0))
+    if ((!any(settings.color)) || (settings.brightnessVolume <= 0 && settings.brightnessGobo <= 0))
     {
         beam.vertex = asfloat(-1);
         return beam;
     }
 
-    beam.falloff = beamFalloff;
-    zoomX = max(zoomX, 0.0001);
-    zoomY = max(zoomY, 0.0001);
-    beam.zoomX = zoomX;
-    beam.zoomY = zoomY;
+    beam.falloff = settings.beamFalloff;
+    beam.zoomX = max(beam.zoomX, 0.0001);
+    beam.zoomY = max(beam.zoomY, 0.0001);
 
-    float apexDistX = nearSizeX / zoomX;
-    float apexDistY = nearSizeY / zoomY;
+    float apexDistX = settings.nearSizeX / beam.zoomX;
+    float apexDistY = settings.nearSizeY / beam.zoomY;
     float frustumNearZ  = max(apexDistX, apexDistY);
-    float frustumFarZ   = frustumNearZ + farz;
-    float frustumOffset = -frustumNearZ + offset;
+    float frustumFarZ   = frustumNearZ + settings.farz;
+    float frustumOffset = -frustumNearZ + settings.offset;
 
     float apexZX = frustumNearZ - apexDistX;
     float apexZY = frustumNearZ - apexDistY;
-    float wX = -zoomX * apexZX;
-    float wY = -zoomY * apexZY;
+    float wX = -beam.zoomX * apexZX;
+    float wY = -beam.zoomY * apexZY;
     beam.aniso = float4(apexZX, apexZY, wX, wY);
 
-    float p = beamFalloff + 1e-4;
+    float p = settings.beamFalloff + 1e-4;
 
     float falloffNorm = exp2(3.26 - 1.54*p - 0.68*p*p);
-    beam.colorGobo = color * brightnessGobo * 5;
-    beam.colorVolume = color * brightnessVolume * falloffNorm * 0.1; 
+    beam.colorGobo = settings.color * settings.brightnessGobo * 5;
+    beam.colorVolume = settings.color * settings.brightnessVolume * falloffNorm * 0.1; 
 
     float maxVolume = max(max(beam.colorVolume.r, beam.colorVolume.g), beam.colorVolume.b);
     float maxGobo = max(max(beam.colorGobo.r, beam.colorGobo.g), beam.colorGobo.b) * 0.05;
@@ -290,8 +280,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(0, frustumFarZ, t*farClipValue);
-    beam.vertex.x *= (beam.vertex.z - apexZX) * zoomX * 2;
-    beam.vertex.y *= (beam.vertex.z - apexZY) * zoomY * 2;
+    beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
+    beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
     beam.vertex.z += frustumOffset;
     
     // special case, push the front corners in a little bit, makes it fit better
@@ -299,8 +289,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     {
         beam.vertex = vertexPos;
         beam.vertex.z = lerp(0, frustumFarZ*0.9, t*farClipValue);
-        beam.vertex.x *= (beam.vertex.z - apexZX) * zoomX * 2;
-        beam.vertex.y *= (beam.vertex.z - apexZY) * zoomY * 2;
+        beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
+        beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
         beam.vertex.z += frustumOffset;
     }
 
@@ -321,8 +311,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     #endif
     
     forward = normalize(mul(ObjectToWorld_NoScale(), float4(forward, 0)).xyz);
-    right = normalize(mul(ObjectToWorld_NoScale(), float4(right, 0)).xyz);
-    up = normalize(mul(ObjectToWorld_NoScale(), float4(up, 0)).xyz);
+    right   = normalize(mul(ObjectToWorld_NoScale(), float4(right, 0)).xyz);
+    up      = normalize(mul(ObjectToWorld_NoScale(), float4(up, 0)).xyz);
     
     float3 worldPos = mul(ObjectToWorld_NoScale(), beam.vertex);
     beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
@@ -363,8 +353,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     {
         float angle  = (k + 0.5) * 0.78539816;
         float2 n2 = float2(cos(angle), sin(angle));
-        float slopeX = n2.x * zoomX;
-        float slopeY = n2.y * zoomY;
+        float slopeX = n2.x * beam.zoomX;
+        float slopeY = n2.y * beam.zoomY;
         float slope = sqrt(slopeX*slopeX + slopeY*slopeY);
         float offset = -(slopeX*slopeX*apexZX + slopeY*slopeY*apexZY) / max(slope, 1e-6);
         float dist  = (offset - dot(float3(n2, slope), testCam)) * rsqrt(1.0 + slope*slope);
@@ -379,8 +369,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         float4 mirrorPlane = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) -
                              float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
         float3 planeNormal = WorldToFrustumVector(apex, forward, right, up, mirrorPlane.xyz);
-        float  offset = dot(mirrorPlane.xyz, apex) + mirrorPlane.w;
-        beam.clipPlane = float4(-planeNormal, offset) / length(planeNormal);
+        float planeOffset = dot(mirrorPlane.xyz, apex) + mirrorPlane.w;
+        beam.clipPlane = float4(-planeNormal, planeOffset) / length(planeNormal);
         
         useQuad = false;
 
@@ -470,12 +460,12 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         settings.framing1A > 0.1 || 
         settings.framing1B > 0.1 || 
         settings.framing2A > 0.1 || 
-        settings.framing2B > 0.1 ||
+        settings.framing2B > 0.1 || 
         settings.framing3A > 0.1 || 
         settings.framing3B > 0.1);
 #endif
 
-    beam.invBeamLength = 1/abs(frustumNearZ - frustumFarZ);
+    beam.invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
 
     return beam;
  }
@@ -496,10 +486,8 @@ float CalculateMip(float t, float focus, float frost, float aperture)
     float blur = abs(t-focus);
     
     blur = 1-blur;
-    blur = blur*blur;
+    blur = blur*blur*blur*blur;
     blur = 1-blur;
-
-    //float aperture = 1;//length(float2(_NearSizeX, _NearSizeY));
 
     return saturate(blur * aperture + frost);
 }
@@ -520,18 +508,10 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
         float mip = 0;
         float2 base = 0;
         #if LUTBEAM_FOCUS
-            //[branch]
-            //if(blur > 0)
-            //{
-            mip    = blur * 2.5;
+            mip = blur * 2.5;
             float margin = clamp(exp2(mip), 0.5, end_size * 0.5);
             float2 inTile = margin + saturate(end) * (end_size - 2 * margin);
             base = chunk + inTile;
-            //}
-            //else
-            //{
-            //    base = chunk + saturate(end) * (end_size - 1) + 0.5;
-            //}
         #else
             base = chunk + saturate(end) * (end_size - 1) + 0.5;
         #endif
@@ -648,7 +628,8 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
                 tMax = min(tMax, t);
         }
     }
-    if(tMax - tMin < 0.01)
+
+    if(tMax - tMin < 0.00001)
         discard;
 
     #if LUTBEAM_FRAMING
@@ -726,16 +707,12 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     
     float penumbra = 10;
     float blur = 0;
-    float4 B0 = 0;
     #if LUTBEAM_FOCUS
-    //[branch]
-    //if(beam.focus > 0 || beam.frost > 0)
-    //{
-        blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_aperture);
+        blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_apertureSize);
         penumbra = rcp((blur*4+1) * t);
-    //}
     #endif
-
+    
+    float4 B0 = 0;
     #if LUTBEAM_FRAMING
     [branch]
     if(beam.framing > 0)
