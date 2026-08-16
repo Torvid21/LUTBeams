@@ -14,6 +14,8 @@ Shader "LUTBeam/Spin"
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
         _SpinSpeed ("_SpinSpeed", Float) = 0.1
+        _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Tilt ("_Tilt", Range(0, 1.0)) = 0
         
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -75,17 +77,19 @@ Shader "LUTBeam/Spin"
             float _BeamIntensity;
             float _BeamFalloff;
             float _SpinSpeed;
-                
+            float _Focus;
+            float _Tilt;
+
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
 
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
@@ -98,8 +102,13 @@ Shader "LUTBeam/Spin"
                     sin(spin),  cos(spin), 0,
                     0,         0,          1
                 );
-
-                return mul(spinMatrix3, vertex);
+                
+                //float3x3 tiltMatrix = {
+                //    1, 0, 0,
+                //    0, cos(_Tilt), -sin(_Tilt),
+                //    0, sin(_Tilt),  cos(_Tilt)
+                //};
+                return vertex;//mul(spinMatrix3, vertex);
             }
 
             #include "Assets/LUTBeam/LUTBeam.cginc"
@@ -130,13 +139,21 @@ Shader "LUTBeam/Spin"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-
-                // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = lerp(1, 0.1, saturate((_ZoomX+_ZoomY)*0.25));
                 
-                // make sure you feed in v.vertex from the unity default cube here directly without modifying it
-                // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX;
+                settings.zoomY = _ZoomY;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeY;
+                settings.offset = _Offset;
+                settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
+                settings.focus = _Focus;
+
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }

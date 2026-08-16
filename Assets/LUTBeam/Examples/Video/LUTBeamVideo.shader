@@ -71,17 +71,20 @@ Shader "LUTBeam/Video"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
-
+            float _Gobo;
+            
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, uv, 0).rgb;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
+
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, uv, 0).rgb;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
+            
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -109,8 +112,20 @@ Shader "LUTBeam/Video"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
+                
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX;
+                settings.zoomY = _ZoomY;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeY;
+                settings.offset = _Offset;
+                settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }

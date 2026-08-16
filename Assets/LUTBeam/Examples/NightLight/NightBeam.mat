@@ -36,15 +36,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _Gobo: 83
+    - _Gobo: 8
     m_Floats:
     - _: 1
     - _Angle: 0.441
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 2.61
+    - _BeamFalloff: 1.43
     - _BeamHotness: 1
-    - _BeamIntensity: 2.84
+    - _BeamIntensity: 6.77
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -56,9 +56,11 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
+    - _Focus: 0
+    - _Frost: 0
     - _Gobo: 8.96
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 1
+    - _GoboIntensity: 7.92
     - _Hotness: 1.96
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.028
@@ -73,7 +75,14 @@ Material:
     - _PanOffset: 0
     - _SpinMult: 4
     - _SpinSpeed: 0.1
-    - _Tilt: 0
+    - _StencilCompareFunction: 6
+    - _StencilFailOp: 0
+    - _StencilPassOp: 0
+    - _StencilReadMask: 255
+    - _StencilRef: 142
+    - _StencilWriteMask: 255
+    - _StencilZFailOp: 0
+    - _Tilt: 1
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
@@ -81,7 +90,7 @@ Material:
     - _ZoomX: 2
     - _ZoomY: 2
     m_Colors:
-    - _Color: {r: 0.61698115, g: 0.9051902, b: 1, a: 1}
+    - _Color: {r: 0.6156863, g: 0.98720366, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

@@ -68,7 +68,7 @@ public class VideoPlayer : UdonSharpBehaviour
         {
             if (AutoplayUrl != null)
             {
-                Debug.Log("_URLFieldChanged");
+                //Debug.Log("_URLFieldChanged");
                 url = AutoplayUrl;
                 RequestSerialization();
                 OnDeserialization();
@@ -87,14 +87,14 @@ public class VideoPlayer : UdonSharpBehaviour
 
     public override void OnDeserialization()
     {
-        Debug.Log("OnDeserialization");
+        //Debug.Log("OnDeserialization");
         base.OnDeserialization();
 
         // If the URL changed, play that URL
         if (UrlToString(url) != UrlToString(urlPrev))
         {
-            Debug.Log("url: " + url);
-            Debug.Log("urlPrev: " + urlPrev);
+            //Debug.Log("url: " + url);
+            //Debug.Log("urlPrev: " + urlPrev);
             urlPrev = url;
             if (url == null)
                 videoPlayer.Stop();
@@ -149,7 +149,7 @@ public class VideoPlayer : UdonSharpBehaviour
     // If we are not the owner, and the video started playing, update the time.
     public override void OnVideoStart()
     {
-        Debug.Log("OnVideoStart");
+        //Debug.Log("OnVideoStart");
         if (!Networking.IsOwner(this.gameObject))
         {
             videoPlayer.SetTime(timeAndOffset.x + ((float)Networking.GetServerTimeInSeconds() - timeAndOffset.y));
@@ -158,7 +158,7 @@ public class VideoPlayer : UdonSharpBehaviour
 
     public void _SlowUpdate()
     {
-        Debug.Log("_SlowUpdate");
+        //Debug.Log("_SlowUpdate");
         SendCustomEventDelayedSeconds(nameof(_SlowUpdate), syncFrequency);
 
         if (Networking.IsOwner(this.gameObject))
@@ -182,7 +182,7 @@ public class VideoPlayer : UdonSharpBehaviour
         if (slider.value != sliderValue)
         {
             sliderValue = slider.value;
-            Debug.Log("_SliderChanged");
+            //Debug.Log("_SliderChanged");
             Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
             float newUserTime = slider.value * videoPlayer.GetDuration();
             videoPlayer.SetTime(newUserTime);
@@ -201,7 +201,7 @@ public class VideoPlayer : UdonSharpBehaviour
     // When URL Field Changed, Become Owner and update synced URL
     public void _URLFieldChanged()
     {
-        Debug.Log("_URLFieldChanged");
+        //Debug.Log("_URLFieldChanged");
         Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
         url = inputField.GetUrl();
         RequestSerialization();
@@ -216,7 +216,7 @@ public class VideoPlayer : UdonSharpBehaviour
         if (Networking.IsOwner(this.gameObject))
             resyncPressed = true;
 
-        Debug.Log("_ResyncPressed");
+        //Debug.Log("_ResyncPressed");
         videoPlayer.Stop();
         if(url != null)
             videoPlayer.PlayURL(url);
@@ -224,7 +224,7 @@ public class VideoPlayer : UdonSharpBehaviour
 
     public void _StopPressed()
     {
-        Debug.Log("_StopPressed");
+        //Debug.Log("_StopPressed");
         Networking.SetOwner(Networking.LocalPlayer, this.gameObject);
         url = null;
         //inputField.SetUrl(null);

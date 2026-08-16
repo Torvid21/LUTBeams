@@ -10,6 +10,6 @@ public class ExpandBounds : UdonSharpBehaviour
     {
         MeshRenderer meshRenderer = GetComponent<MeshRenderer>();
         meshRenderer.ResetBounds();
-        meshRenderer.bounds = new Bounds(meshRenderer.bounds.center, Vector3.one * expandSize);
+        meshRenderer.localBounds = new Bounds(Vector3.zero, Vector3.one * expandSize);
     }
 }

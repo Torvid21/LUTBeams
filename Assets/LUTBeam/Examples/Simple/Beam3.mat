@@ -42,9 +42,9 @@ Material:
     - _Angle: 0.012
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 3
+    - _BeamFalloff: 2.86
     - _BeamHotness: 1
-    - _BeamIntensity: 1
+    - _BeamIntensity: 7.61
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -58,9 +58,25 @@ Material:
     - _Falloff: 0
     - _FarZ: 100
     - _FarZMaxZoom: 10
-    - _Gobo: -10.73
+    - _Focus: 0
+    - _Framing: 0
+    - _Framing0: 0
+    - _Framing0A: 0
+    - _Framing0B: 0
+    - _Framing1: 0
+    - _Framing1A: 0
+    - _Framing1B: 0
+    - _Framing2: 0
+    - _Framing2A: 0
+    - _Framing2B: 0
+    - _Framing3: 0
+    - _Framing3A: 0
+    - _Framing3B: 0
+    - _FramingAngle: 0
+    - _Frost: 0
+    - _Gobo: 0
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 1
+    - _GoboIntensity: 7.85
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.066

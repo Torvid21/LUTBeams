@@ -12,13 +12,30 @@ Shader "LUTBeam/Simple"
         _NearSizeY ("_NearSizeY", Range(0,2)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
-        _Gobo ("Gobo Index", Integer) = 0
-            
+        [IntRange] _Gobo ("Gobo Index", Range(0,16)) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Frost ("_Frost", Range(0, 1.0)) = 0
+        
+        [Header(Framing 0)]
+        _Framing0A ("_Framing0A", Range(0, 1.0)) = 0
+        _Framing0B ("_Framing0B", Range(0, 1.0)) = 0
+        [Header(Framing 1)]
+        _Framing1A ("_Framing1A", Range(0, 1.0)) = 0
+        _Framing1B ("_Framing1B", Range(0, 1.0)) = 0
+        [Header(Framing 2)]
+        _Framing2A ("_Framing2A", Range(0, 1.0)) = 0
+        _Framing2B ("_Framing2B", Range(0, 1.0)) = 0
+        [Header(Framing 3)]
+        _Framing3A ("_Framing3A", Range(0, 1.0)) = 0
+        _Framing3B ("_Framing3B", Range(0, 1.0)) = 0
+
+        _FramingAngle ("_FramingAngle", Range(0, 10.0)) = 0
+
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
-        _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
-        _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
-        _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
+        _BeamIntensity ("_BeamIntensity", Range(0, 16.0)) = 1
+        _BeamFalloff ("_BeamFalloff", Range(0, 4.0)) = 1
+        _GoboIntensity ("_GoboIntensity", Range(0, 16.0)) = 1
         
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
@@ -54,6 +71,8 @@ Shader "LUTBeam/Simple"
         {
             Name "LUTBeam"
             Blend One One
+            ColorMask RGB
+
             CGPROGRAM
             
             #pragma multi_compile_instancing
@@ -73,16 +92,28 @@ Shader "LUTBeam/Simple"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
+            float _Focus;
+            float _Frost;
+            float _Framing0A;
+            float _Framing0B;
+            float _Framing1A;
+            float _Framing1B;
+            float _Framing2A;
+            float _Framing2B;
+            float _Framing3A;
+            float _Framing3B;
+            float _FramingAngle;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
+
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             #include "Assets/LUTBeam/LUTBeam.cginc"
@@ -114,12 +145,30 @@ Shader "LUTBeam/Simple"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = lerp(1, 0.1, 1-pow(1-saturate(length(float2(_ZoomX, _ZoomY))*0.5), 5));
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX;
+                settings.zoomY = _ZoomY;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeY;
+                settings.offset = _Offset;
+                settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
+                settings.focus = _Focus;
+                settings.frost = _Frost;
+                settings.framing0A = _Framing0A;
+                settings.framing0B = _Framing0B;
+                settings.framing1A = _Framing1A;
+                settings.framing1B = _Framing1B;
+                settings.framing2A = _Framing2A;
+                settings.framing2B = _Framing2B;
+                settings.framing3A = _Framing3A;
+                settings.framing3B = _Framing3B;
+                settings.framingAngle = _FramingAngle;
 
-                // make sure you feed in v.vertex from the unity default cube here directly without modifying it
-                // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }
@@ -130,6 +179,7 @@ Shader "LUTBeam/Simple"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
                 float3 col = LUTBeamFrag(i.beam);
+
                 return float4(col, 0);
             }
             ENDCG

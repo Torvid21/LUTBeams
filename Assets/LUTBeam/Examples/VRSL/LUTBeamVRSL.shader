@@ -128,15 +128,15 @@ Shader "LUTBeam/VRSL"
             UNITY_INSTANCING_BUFFER_END(Props)
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
 
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             // VRSL STUB
@@ -285,8 +285,20 @@ Shader "LUTBeam/VRSL"
                 float zoomFade = lerp(1, 0.1, saturate((_ZoomX+_ZoomY)*0.25));
                 
 		        half oscConeWidth = getDMXConeWidth(dmx);
+                
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX*oscConeWidth;
+                settings.zoomY = _ZoomY*oscConeWidth;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeY;
+                settings.offset = _Offset;
+                settings.color = _Color * finalColor;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX*oscConeWidth, _ZoomY*oscConeWidth, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * finalColor, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }
