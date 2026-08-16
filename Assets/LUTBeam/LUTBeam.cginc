@@ -15,6 +15,11 @@ struct dummy_struct {};
     #undef CUSTOM_STRUCT_EXISTS
 #endif
 
+#pragma shader_feature RED GREEN
+
+#pragma multi_compile _ LUTBEAM_FRAMING
+#pragma multi_compile _ LUTBEAM_FOCUS
+
 struct BeamSettings
 {
     float zoomX;
@@ -28,6 +33,7 @@ struct BeamSettings
     float brightnessGobo;
     float beamFalloff;
     float focus;
+    float focus_aperture;
     float frost;
     float framing0A;
     float framing0B;
@@ -49,28 +55,34 @@ struct BeamData
 
     noperspective float2 screenPosition : TEXCOORD42;
 
-    nointerpolation  float zoomX : TEXCOORD43;
-    nointerpolation  float zoomY : TEXCOORD44;
-    nointerpolation  float frustumNearZ : TEXCOORD45;
-    nointerpolation  float frustumFarZ : TEXCOORD46;
-    nointerpolation  float invBeamLength : TEXCOORD47;
+    nointerpolation float zoomX : TEXCOORD43;
+    nointerpolation float zoomY : TEXCOORD44;
+    nointerpolation float frustumNearZ : TEXCOORD45;
+    nointerpolation float frustumFarZ : TEXCOORD46;
+    nointerpolation float invBeamLength : TEXCOORD47;
     
-    nointerpolation  float3 rayOrigin  : TEXCOORD49;
-    nointerpolation  float3 colorGobo : TEXCOORD50;
-    nointerpolation  float3 colorVolume : TEXCOORD51;
-    nointerpolation  float4 clipPlane : TEXCOORD52;
-    nointerpolation  float4 aniso : TEXCOORD53;
-    nointerpolation  float falloff : TEXCOORD54;
+    nointerpolation float3 rayOrigin  : TEXCOORD49;
+    nointerpolation float3 colorGobo : TEXCOORD50;
+    nointerpolation float3 colorVolume : TEXCOORD51;
+    nointerpolation float4 clipPlane : TEXCOORD52;
+    nointerpolation float4 aniso : TEXCOORD53;
+    nointerpolation float falloff : TEXCOORD54;
     NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
 
     noperspective float DepthFadeData : TEXCOORD56;
-    nointerpolation  float focus : TEXCOORD57;
-    nointerpolation  float frost : TEXCOORD58;
 
+#if LUTBEAM_FOCUS
+    nointerpolation float focus : TEXCOORD57;
+    nointerpolation float focus_aperture : TEXCOORD64;
+    nointerpolation float frost : TEXCOORD58;
+#endif
+
+#if LUTBEAM_FRAMING
     nointerpolation float4 bladePn : TEXCOORD59;
     float4 bladeDn : TEXCOORD60;
     nointerpolation bool framing : TEXCOORD63;
-    nointerpolation  float2 invZoom2 : TEXCOORD64;
+#endif
+
 };
 
 float inverselerp(float from, float to, float value)
@@ -78,8 +90,6 @@ float inverselerp(float from, float to, float value)
     return (value - from) / (to - from);
 }
 
-#define LUTBEAM_EXTRA_FOCUS 0
-#define LUTBEAM_EXTRA_FRAMING 0
 
 Texture2D _CameraDepthTexture;
 Texture2D _GrabTexture;
@@ -87,6 +97,13 @@ SamplerState trilinear_clamp_sampler;
 SamplerState point_clamp_sampler;
 float _VRChatMirrorMode;
 
+bool DepthExists()
+{
+    uint Width = 0;
+    uint Height = 0;
+    _CameraDepthTexture.GetDimensions(Width, Height);
+    return !(Width == 16 && Height == 16);
+}
 
 // NOTE(valuef): Mirrors use oblique clipping planes so we need to
 // do some extra math to properly convert the depth we sample out
@@ -172,6 +189,7 @@ BeamSettings DefaultBeamSettings()
     settings.brightnessGobo = 4;
     settings.beamFalloff = 2;
     settings.focus = 0;
+    settings.focus_aperture = 1;
     settings.frost = 0;
     settings.framing0A = 0;
     settings.framing0B = 0;
@@ -207,12 +225,16 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float ey = nearSizeY + zoomY * farz;
     float minWidth = 0.05;
     color *= 2 / pow(ex * ey + minWidth, 0.7);
-#if LUTBEAM_EXTRA_FOCUS
-    float FocusZoomExtra = settings.focus*0.05;
-    
+
+#if LUTBEAM_FOCUS
+    float FocusZoomExtra = settings.focus*0.05 * settings.focus_aperture;
     zoomX += FocusZoomExtra;
     zoomY += FocusZoomExtra;
+    beam.focus = focus;
+    beam.frost = frost;
+    beam.focus_aperture = settings.focus_aperture;
 #endif
+
     if ((!any(color)) || (brightnessVolume <= 0 && brightnessGobo <= 0))
     {
         beam.vertex = asfloat(-1);
@@ -224,8 +246,6 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     zoomY = max(zoomY, 0.0001);
     beam.zoomX = zoomX;
     beam.zoomY = zoomY;
-    beam.focus = focus;
-    beam.frost = frost;
 
     float apexDistX = nearSizeX / zoomX;
     float apexDistY = nearSizeY / zoomY;
@@ -274,8 +294,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.vertex.y *= (beam.vertex.z - apexZY) * zoomY * 2;
     beam.vertex.z += frustumOffset;
     
-    // special case, push the front corners in a little bit
-    if(beam.vertex.z > 0 && length(beam.vertex.xy)>0.1)
+    // special case, push the front corners in a little bit, makes it fit better
+    if(beam.vertex.z > 0 && length(beam.vertex.xy) > 0.1)
     {
         beam.vertex = vertexPos;
         beam.vertex.z = lerp(0, frustumFarZ*0.9, t*farClipValue);
@@ -299,7 +319,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         up = LUTBEAM_CALLBACK_VERTEX(up) - corrected_pos;
         frustumOffsetVector = LUTBEAM_CALLBACK_VERTEX(frustumOffsetVector) - corrected_pos;
     #endif
-        
+    
     forward = normalize(mul(ObjectToWorld_NoScale(), float4(forward, 0)).xyz);
     right = normalize(mul(ObjectToWorld_NoScale(), float4(right, 0)).xyz);
     up = normalize(mul(ObjectToWorld_NoScale(), float4(up, 0)).xyz);
@@ -341,14 +361,14 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     [unroll]
     for (int k = 0; k < 8; k++)
     {
-        float a  = (k + 0.5) * 0.78539816;
-        float2 n2 = float2(cos(a), sin(a));
-        float sx = n2.x * zoomX;
-        float sy = n2.y * zoomY;
-        float slope = sqrt(sx*sx + sy*sy);
-        float w  = -(sx*sx*apexZX + sy*sy*apexZY) / max(slope, 1e-6);
-        float d  = (w - dot(float3(n2, slope), testCam)) * rsqrt(1.0 + slope*slope);
-        inside = min(inside, d);
+        float angle  = (k + 0.5) * 0.78539816;
+        float2 n2 = float2(cos(angle), sin(angle));
+        float slopeX = n2.x * zoomX;
+        float slopeY = n2.y * zoomY;
+        float slope = sqrt(slopeX*slopeX + slopeY*slopeY);
+        float offset = -(slopeX*slopeX*apexZX + slopeY*slopeY*apexZY) / max(slope, 1e-6);
+        float dist  = (offset - dot(float3(n2, slope), testCam)) * rsqrt(1.0 + slope*slope);
+        inside = min(inside, dist);
     }
     bool useQuad = inside > -margin;
 
@@ -356,15 +376,16 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     if (_VRChatMirrorMode != 0)
     {
         // Also generate a clipping plane so it can be cut nice and volumetric-ly at the surface of the mirror..
-        float4 pl = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) - float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
-        float3 nf = WorldToFrustumVector(apex, forward, right, up, pl.xyz);
-        float  wf = dot(pl.xyz, apex) + pl.w;
-        beam.clipPlane = float4(-nf, wf) / length(nf);
+        float4 mirrorPlane = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) -
+                             float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
+        float3 planeNormal = WorldToFrustumVector(apex, forward, right, up, mirrorPlane.xyz);
+        float  offset = dot(mirrorPlane.xyz, apex) + mirrorPlane.w;
+        beam.clipPlane = float4(-planeNormal, offset) / length(planeNormal);
         
         useQuad = false;
 
-        float dCurrent = dot(pl.xyz, worldPos) + pl.w - 0.001;
-        float dStart   = dot(pl.xyz, apex) + pl.w - 0.001;
+        float dCurrent = dot(mirrorPlane.xyz, worldPos) + mirrorPlane.w - 0.001;
+        float dStart   = dot(mirrorPlane.xyz, apex) + mirrorPlane.w - 0.001;
         if (dCurrent <= 0.0)
         {
             float denom = dCurrent - dStart;
@@ -388,7 +409,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         float2 ndc = sign(vertexPos.xy) * 2.0;
         beam.vertex = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1.0);
     
-        const float d = 4.0;
+        float d = 4.0;
         float3 viewPos = float3(
             d * (ndc.x + UNITY_MATRIX_P._m02) / UNITY_MATRIX_P._m00,
             d * (ndc.y + UNITY_MATRIX_P._m12) / UNITY_MATRIX_P._m11,
@@ -408,12 +429,12 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.frustumCorrection /= beam.vertex.w;
     beam.screenPosition /= beam.vertex.w;
 
-    float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
-    float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
-    float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
-    float4 topPlane    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
-    float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
-    float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
+    float4 leftPlane   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+    float4 rightPlane  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+    float4 bottomPlane = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+    float4 topPlane    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+    float4 nearPlane   = float4(float3( 0,  0,  1), -beam.frustumNearZ);
+    float4 farPlane    = float4(float3( 0,  0, -1),  beam.frustumFarZ);
     
     float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
     
@@ -439,10 +460,10 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float3 plane1 = float3(r1 * (invTwoL * 2) + float2(r1.y, -r1.x) * (f1B - f1A), -invTwoL * (f1A + f1B));
     float3 plane2 = float3(r2 * (invTwoL * 2) + float2(r2.y, -r2.x) * (f2B - f2A), -invTwoL * (f2A + f2B));
     float3 plane3 = float3(r3 * (invTwoL * 2) + float2(r3.y, -r3.x) * (f3B - f3A), -invTwoL * (f3A + f3B));
-    
+
+#if LUTBEAM_FRAMING
     beam.bladePn = float4(-dot(plane0, beam.rayOrigin), -dot(plane1, beam.rayOrigin), -dot(plane2, beam.rayOrigin), -dot(plane3, beam.rayOrigin));
     beam.bladeDn = float4( dot(plane0, beam.rayDir),     dot(plane1, beam.rayDir),     dot(plane2, beam.rayDir),     dot(plane3, beam.rayDir));
-
     beam.framing = (
         settings.framing0A > 0.1 || 
         settings.framing0B > 0.1 || 
@@ -452,11 +473,10 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         settings.framing2B > 0.1 ||
         settings.framing3A > 0.1 || 
         settings.framing3B > 0.1);
-    
+#endif
+
     beam.invBeamLength = 1/abs(frustumNearZ - frustumFarZ);
 
-    beam.invZoom2 = 1.0f / float2(beam.zoomX, beam.zoomY);
-    
     return beam;
  }
 
@@ -468,7 +488,7 @@ float Bayer2(float2 a)
 float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
 float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
-float CalculateMip(float t, float focus, float frost)
+float CalculateMip(float t, float focus, float frost, float aperture)
 {
     float A = 1;
     t = sqrt(t);
@@ -479,16 +499,16 @@ float CalculateMip(float t, float focus, float frost)
     blur = blur*blur;
     blur = 1-blur;
 
-    float aperture = 1;//length(float2(_NearSizeX, _NearSizeY));
+    //float aperture = 1;//length(float2(_NearSizeX, _NearSizeY));
 
-    return saturate((blur + frost) * aperture);
+    return saturate(blur * aperture + frost);
 }
 
 float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, float blur, NESTED_STRUCT_TYPE nestedStruct)
 {
-    [branch]
-    if(highQuality)
-    {
+    //[branch]
+    //if(highQuality)
+    //{
         float tex_size = start_size * end_size;
 
         float2 posF          = saturate(start) * (start_size - 1.001);
@@ -499,19 +519,19 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
         
         float mip = 0;
         float2 base = 0;
-        #if LUTBEAM_EXTRA_FOCUS
-            [branch]
-            if(blur > 0)
-            {
-                mip    = blur * 2.5;
-                float margin = clamp(exp2(mip), 0.5, end_size * 0.5);
-                float2 inTile = margin + saturate(end) * (end_size - 2 * margin);
-                base = chunk + inTile;
-            }
-            else
-            {
-                base = chunk + saturate(end) * (end_size - 1) + 0.5;
-            }
+        #if LUTBEAM_FOCUS
+            //[branch]
+            //if(blur > 0)
+            //{
+            mip    = blur * 2.5;
+            float margin = clamp(exp2(mip), 0.5, end_size * 0.5);
+            float2 inTile = margin + saturate(end) * (end_size - 2 * margin);
+            base = chunk + inTile;
+            //}
+            //else
+            //{
+            //    base = chunk + saturate(end) * (end_size - 1) + 0.5;
+            //}
         #else
             base = chunk + saturate(end) * (end_size - 1) + 0.5;
         #endif
@@ -533,40 +553,32 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
         #else
             return 1;
         #endif
-    }
-    else
-    {
-        // I realized I can sample just once, the angular resolution will look dithery
-        // but maybe we can get away with it, ahaha. I left the old verison commented out
-        // in case people get upset
-        float tex_size = start_size * end_size;
-        float2 n = Bayer4(pixel);
-        float2 posF = saturate(start) * (start_size - 1.001);
-        float2 cell  = floor(posF + n);
-        float2 chunk = cell * end_size;
-
-        float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-
-        #ifdef LUTBEAM_CALLBACK_VOLUME
-            #ifdef CUSTOM_STRUCT_EXISTS
-                float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0, nestedStruct);
-            #else
-                float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0);
-            #endif
-        #else
-            float3 goboResult = float3(1, 1, 1);
-        #endif
-        
-        return goboResult;
-    }
-}
-
-bool DepthExists()
-{
-    uint Width = 0;
-    uint Height = 0;
-    _CameraDepthTexture.GetDimensions(Width, Height);
-    return !(Width == 16 && Height == 16);
+    //}
+    //else
+    //{
+    //    // I realized I can sample just once, the angular resolution will look dithery
+    //    // but maybe we can get away with it, ahaha. I left the old verison commented out
+    //    // in case people get upset
+    //    float tex_size = start_size * end_size;
+    //    float2 n = Bayer4(pixel);
+    //    float2 posF = saturate(start) * (start_size - 1.001);
+    //    float2 cell  = floor(posF + n);
+    //    float2 chunk = cell * end_size;
+    //
+    //    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
+    //
+    //    #ifdef LUTBEAM_CALLBACK_VOLUME
+    //        #ifdef CUSTOM_STRUCT_EXISTS
+    //            float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0, nestedStruct);
+    //        #else
+    //            float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0);
+    //        #endif
+    //    #else
+    //        float3 goboResult = float3(1, 1, 1);
+    //    #endif
+    //    
+    //    return goboResult;
+    //}
 }
 
 float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
@@ -583,10 +595,6 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     
     float raw_dist = _CameraDepthTexture.SampleLevel(point_clamp_sampler, suv, 0).r;
     float SceneDistance = beam.DepthFadeData / (raw_dist + beam.frustumCorrection);
-
-    #if LUTBEAM_AVATAR
-        SceneDistance = 9999999;
-    #endif
 
     #if defined(SHADER_API_MOBILE)
         SceneDistance = 9999999;
@@ -643,7 +651,7 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     if(tMax - tMin < 0.01)
         discard;
 
-    #if LUTBEAM_EXTRA_FRAMING
+    #if LUTBEAM_FRAMING
         [branch]
         if(beam.framing > 0)
         {
@@ -719,16 +727,16 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
     float penumbra = 10;
     float blur = 0;
     float4 B0 = 0;
-    #if LUTBEAM_EXTRA_FOCUS
+    #if LUTBEAM_FOCUS
     //[branch]
     //if(beam.focus > 0 || beam.frost > 0)
-    {
-        blur = CalculateMip(t, beam.focus, beam.frost);
+    //{
+        blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_aperture);
         penumbra = rcp((blur*4+1) * t);
-    }
+    //}
     #endif
 
-    #if LUTBEAM_EXTRA_FRAMING
+    #if LUTBEAM_FRAMING
     [branch]
     if(beam.framing > 0)
     {
@@ -762,7 +770,7 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
             float3 goboResult = float3(1, 1, 1);
         #endif
 
-    #if LUTBEAM_EXTRA_FRAMING
+    #if LUTBEAM_FRAMING
         [branch]
         if(beam.framing > 0)
         {

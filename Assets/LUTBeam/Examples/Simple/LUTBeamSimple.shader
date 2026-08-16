@@ -14,6 +14,7 @@ Shader "LUTBeam/Simple"
         _FarZ ("_FarZ", Float) = 25
         [IntRange] _Gobo ("Gobo Index", Range(0,16)) = 0
         _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Focus_Aperture ("_Focus_Aperture", Range(0, 1.0)) = 1
         _Frost ("_Frost", Range(0, 1.0)) = 0
         
         [Header(Framing 0)]
@@ -37,6 +38,10 @@ Shader "LUTBeam/Simple"
         _BeamFalloff ("_BeamFalloff", Range(0, 4.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 16.0)) = 1
         
+        [Header(Extra stuff)]
+        [Toggle(LUTBEAM_FRAMING)] _FramingEnabled ("Framing Shutters", Float) = 0
+        [Toggle(LUTBEAM_FOCUS)]   _FrostEnabled   ("Frost / Focus",    Float) = 0
+
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
         [IntRange] _StencilReadMask ("Read Mask", Range(0, 255)) = 255
@@ -93,6 +98,7 @@ Shader "LUTBeam/Simple"
             float _BeamIntensity;
             float _BeamFalloff;
             float _Focus;
+            float _Focus_Aperture;
             float _Frost;
             float _Framing0A;
             float _Framing0B;
@@ -157,6 +163,7 @@ Shader "LUTBeam/Simple"
                 settings.brightnessGobo = _GoboIntensity;
                 settings.beamFalloff = _BeamFalloff;
                 settings.focus = _Focus;
+                settings.focus_aperture = _Focus_Aperture;
                 settings.frost = _Frost;
                 settings.framing0A = _Framing0A;
                 settings.framing0B = _Framing0B;
