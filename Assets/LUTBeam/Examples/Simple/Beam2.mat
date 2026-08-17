@@ -93,6 +93,7 @@ Material:
     - _StencilRef: 142
     - _StencilWriteMask: 255
     - _StencilZFailOp: 0
+    - _Test: 1
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90

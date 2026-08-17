@@ -16,9 +16,9 @@ Shader "LUTBeam/Spin"
         
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
-        _BeamIntensity ("_BeamIntensity", Range(0, 8.0)) = 1
+        _BeamIntensity ("_BeamIntensity", Range(0, 16.0)) = 1
         _BeamFalloff ("_BeamFalloff", Range(0, 3.0)) = 1
-        _GoboIntensity ("_GoboIntensity", Range(0, 8.0)) = 1
+        _GoboIntensity ("_GoboIntensity", Range(0, 16.0)) = 1
         
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142

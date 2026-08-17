@@ -382,33 +382,33 @@ float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
 float3 MagicSample(float2 start, float2 end, float blur, NESTED_STRUCT_TYPE nestedStruct)
 {
-        float tex_size = start_size * end_size;
+    float tex_size = start_size * end_size;
     
-        float2 posF          = saturate(start) * (start_size - 1.001);
-        float2 cell          = floor(posF);
-        float2 chunkblend    = posF - cell;
-        float2 chunkblendInv = 1 - chunkblend;
-        float2 chunk         = cell * end_size;
+    float2 posF          = saturate(start) * (start_size - 1.001);
+    float2 cell          = floor(posF);
+    float2 chunkblend    = posF - cell;
+    float2 chunkblendInv = 1 - chunkblend;
+    float2 chunk         = cell * end_size;
         
-        float2 base = chunk + saturate(end) * (end_size - 1) + 0.5;
+    float2 base = chunk + saturate(end) * (end_size - 1) + 0.5;
     
-        #ifdef LUTBEAM_CALLBACK_VOLUME
-            #ifdef CUSTOM_STRUCT_EXISTS
-                float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0, nestedStruct);
-                float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0, nestedStruct);
-                float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0, nestedStruct);
-                float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0, nestedStruct);
-            #else
-                float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0);
-                float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0);
-                float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0);
-                float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0);
-            #endif
-    
-            return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+    #ifdef LUTBEAM_CALLBACK_VOLUME
+        #ifdef CUSTOM_STRUCT_EXISTS
+            float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0, nestedStruct);
+            float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0, nestedStruct);
+            float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0, nestedStruct);
+            float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0, nestedStruct);
         #else
-            return 1;
+            float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0);
+            float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0);
+            float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0);
+            float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0);
         #endif
+    
+        return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+    #else
+        return 1;
+    #endif
 }
 
 float3 LUTBeamFrag(BeamData beam)

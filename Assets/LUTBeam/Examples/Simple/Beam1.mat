@@ -87,7 +87,7 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 23.9
+    - _Zoom: 26
     - _ZoomX: 15
     - _ZoomY: 39.8
     m_Colors:
