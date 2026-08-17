@@ -49,6 +49,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
             float _RayAngle;
             float _AspectRatio;
             float _MipLevel;
+            float _BlurStrength;
             Texture2D _PreviousMip;
 
             v2f vert (appdata v)
@@ -81,7 +82,12 @@ Shader "LUTBeam/GoboLookupGenerator" {
                 uv = saturate(uv);
                 return tex2Dlod(_MainTex, float4(uv, 0, 0)) * tex2Dlod(_Mask, float4(uv, 0, 0));
             }
-            
+
+            // zoom the UV in a little so the blur doesn't kill us.
+            float2 scaledUV(float2 uv)
+            {
+                return (uv-0.5) * 1 + 0.5;
+            }
             float4 frag(v2f input) : SV_Target
             {
                 if(_EnableBake_Gobo > 0.5)
@@ -89,7 +95,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
 		            float4 result = 0;
                     if(_MipLevel == 0)
                     {
-                        result = SampleGobo((input.uv-0.5) * 1.25 + 0.5).r;
+                        result = SampleGobo(scaledUV(input.uv)) * (distance(scaledUV(input.uv), 0.5) < 0.5);
                     }
                     else
                     {
@@ -98,12 +104,18 @@ Shader "LUTBeam/GoboLookupGenerator" {
                         int samples = 100;
 		                for (int i = 0; i < samples; i++)
 		                {
+                            float r0 = 0;
+                            float r1 = r0 + _BlurStrength;
+                            float r2 = r1 + _BlurStrength;
+                            float r3 = r2 + _BlurStrength;
+                            float r4 = r3 + _BlurStrength;
+                            float r5 = r4 + _BlurStrength;
                             float weight = SpiralBlurWeight(i, samples);
-                            if      (_MipLevel == 1) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(0.01, samples, i), 0, 0)) * weight;
-                            else if (_MipLevel == 2) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(0.02, samples, i), 0, 0)) * weight;
-                            else if (_MipLevel == 3) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(0.03, samples, i), 0, 0)) * weight;
-                            else if (_MipLevel == 4) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(0.04, samples, i), 0, 0)) * weight;
-                            else                     result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(0.05, samples, i), 0, 0)) * weight;
+                            if      (_MipLevel == 1) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r1, samples, i), 0, 0)) * weight;
+                            else if (_MipLevel == 2) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r2, samples, i), 0, 0)) * weight;
+                            else if (_MipLevel == 3) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r3, samples, i), 0, 0)) * weight;
+                            else if (_MipLevel == 4) result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r4, samples, i), 0, 0)) * weight;
+                            else                     result += tex2Dlod(_MainTex, float4(input.uv + SpiralBlurUVOffset(r5, samples, i), 0, 0)) * weight;
                             totalWeight += weight;
 		                }
 		                result /= totalWeight;
