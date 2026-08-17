@@ -377,9 +377,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
         float2 chunkblendInv = 1 - chunkblend;
         float2 chunk         = cell * end_size;
 
-
         float2 base = chunk + saturate(end) * (end_size - 1) + 0.5;
-
 
         #ifdef LUTBEAM_CALLBACK_VOLUME
             #ifdef CUSTOM_STRUCT_EXISTS

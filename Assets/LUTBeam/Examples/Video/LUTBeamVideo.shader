@@ -73,12 +73,12 @@ Shader "LUTBeam/Video"
             float _BeamFalloff;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
                 return _GoboTex.SampleLevel(samp, uv, 0).rgb;
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
                 return _GoboLUT.SampleLevel(samp, uv, 0).rgb;
             }
@@ -110,7 +110,19 @@ Shader "LUTBeam/Video"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX;
+                settings.zoomY = _ZoomX;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeX;
+                settings.offset = _Offset;
+                settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
+
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }

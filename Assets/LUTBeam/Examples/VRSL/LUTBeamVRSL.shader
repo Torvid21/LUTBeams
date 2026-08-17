@@ -286,7 +286,19 @@ Shader "LUTBeam/VRSL"
                 
 		        half oscConeWidth = getDMXConeWidth(dmx);
 
-                o.beam = LUTBeamVert(v.vertex, _ZoomX*oscConeWidth, _ZoomY*oscConeWidth, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * finalColor, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX*oscConeWidth;
+                settings.zoomY = _ZoomX*oscConeWidth;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeX;
+                settings.offset = _Offset;
+                settings.color = _Color * finalColor;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
+
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }

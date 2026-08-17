@@ -78,23 +78,15 @@ Shader "LUTBeam/Spin"
             float _SpinSpeed;
             float _Frost;
 
-            float Lerp4(float4 c, float t)
-            {
-                float x = saturate(t) * 3.0;
-                return lerp(lerp(lerp(c.r, c.g, saturate(x)), c.b, saturate(x - 1)), c.a, saturate(x - 2));
-            }
-
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                float4 result = _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Frost);
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                float4 result = _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rgba;
-                return Lerp4(result, _Frost);
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
@@ -140,12 +132,19 @@ Shader "LUTBeam/Spin"
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
-                // simulate dimming that happens when the gobo is zoomed out
-                float zoomFade = lerp(1, 0.1, saturate((_ZoomX+_ZoomY)*0.25));
-                
-                // make sure you feed in v.vertex from the unity default cube here directly without modifying it
-                // otherwise things may go wroooonngggg :)
-                o.beam = LUTBeamVert(v.vertex, _ZoomX, _ZoomY, _FarZ, _NearSizeX, _NearSizeY, _Offset, _Color * zoomFade, _BeamIntensity, _GoboIntensity, _BeamFalloff);
+                BeamSettings settings = DefaultBeamSettings();
+                settings.zoomX = _ZoomX;
+                settings.zoomY = _ZoomX;
+                settings.farz = _FarZ;
+                settings.nearSizeX = _NearSizeX;
+                settings.nearSizeY = _NearSizeX;
+                settings.offset = _Offset;
+                settings.color = _Color;
+                settings.brightnessVolume = _BeamIntensity;
+                settings.brightnessGobo = _GoboIntensity;
+                settings.beamFalloff = _BeamFalloff;
+
+                o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }
