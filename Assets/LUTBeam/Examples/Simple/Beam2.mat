@@ -11,7 +11,8 @@ Material:
   m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - LUTBEAM_FOCUS
   m_InvalidKeywords:
   - LUTBEAM_FROST
   m_LightmapFlags: 4
@@ -57,14 +58,14 @@ Material:
     - _FadeMult: 1
     - _FailOp: 0
     - _Falloff: 0
-    - _FarZ: 50
+    - _FarZ: 78.7
     - _FarZMaxZoom: 10
-    - _Focus: 0
-    - _FocusEnabled: 0
+    - _Focus: 0.143
+    - _FocusEnabled: 1
     - _Focus_Aperture: 0
     - _Focus_ApertureSize: 1
     - _Framing0A: 0.643
-    - _Framing0B: 0.298
+    - _Framing0B: 0.558
     - _Framing1A: 0
     - _Framing1B: 0
     - _Framing2A: 0
@@ -75,15 +76,15 @@ Material:
     - _FramingEnabled: 0
     - _Frost: 0
     - _FrostEnabled: 1
-    - _Gobo: 8
+    - _Gobo: 12
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 7.58
+    - _GoboIntensity: 16
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
-    - _NearSizeX: 0.2
-    - _NearSizeY: 0.2
-    - _Offset: 0.087
+    - _NearSizeX: 0
+    - _NearSizeY: 0
+    - _Offset: 0.241
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90
@@ -106,8 +107,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0.75
-    - _ZoomY: 0.75
+    - _ZoomX: 0.859
+    - _ZoomY: 0.958
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

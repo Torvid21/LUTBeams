@@ -121,8 +121,8 @@ Material:
     m_Ints: []
     m_Floats:
     - _Angle: -0.31
-    - _AngleMax: 0.59
-    - _AngleMin: 0.32
+    - _AngleMax: 1
+    - _AngleMin: 0
     - _Brightness: 10
     - _BrightnessGoboZoomMax: 0.5
     - _BrightnessGoboZoomMin: 5
