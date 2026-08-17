@@ -69,7 +69,7 @@ Material:
     - _Framing3B: 0
     - _FramingAngle: 0
     - _Frost: 0
-    - _Gobo: 3.92
+    - _Gobo: 5
     - _GoboColorEnabled: 0
     - _GoboIntensity: 3.5
     - _Hotness: 1
@@ -100,8 +100,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0.5
-    - _ZoomY: 0.5
+    - _ZoomX: 20
+    - _ZoomY: 20
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

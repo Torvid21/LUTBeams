@@ -56,6 +56,7 @@ Material:
     - _Falloff: 0
     - _FarZ: 25
     - _FarZMaxZoom: 10
+    - _Frost: 0
     - _Gobo: 8.96
     - _GoboColorEnabled: 0
     - _GoboIntensity: 1
@@ -64,6 +65,7 @@ Material:
     - _NearRadius: 0.028
     - _NearRadiusX: 0.1
     - _NearRadiusY: 0.1
+    - _NearSize: 0.1
     - _NearSizeX: 0.1
     - _NearSizeY: 0.1
     - _Offset: 0.07
@@ -84,7 +86,7 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 2
+    - _Zoom: 69
     - _ZoomX: 2
     - _ZoomY: 2
     m_Colors:

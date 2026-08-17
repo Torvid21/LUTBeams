@@ -6,7 +6,7 @@ Shader "LUTBeam/Avatar"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
+        _Zoom ("_Zoom", Range(0, 120.0)) = 20
         _NearSize ("_NearSize", Range(0,1)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25

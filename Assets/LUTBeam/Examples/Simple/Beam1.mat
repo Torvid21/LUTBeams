@@ -66,6 +66,7 @@ Material:
     - _NearRadius: 0.144
     - _NearRadiusX: 0.1
     - _NearRadiusY: 0.1
+    - _NearSize: 0.1
     - _NearSizeX: 0.5
     - _NearSizeY: 0.5
     - _Offset: 0.212
@@ -86,9 +87,9 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 0.5
-    - _ZoomX: 0.2
-    - _ZoomY: 0.2
+    - _Zoom: 23.9
+    - _ZoomX: 15
+    - _ZoomY: 39.8
     m_Colors:
     - _Color: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

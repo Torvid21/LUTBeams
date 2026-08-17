@@ -159,15 +159,15 @@ BeamSettings DefaultBeamSettings()
     settings.beamFalloff = 2;
     return settings;
 }
+#define pi 3.1415926535897
 
 BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
 {
     BeamData beam = (BeamData)0;
     
-    beam.zoomX = settings.zoomX;
-    beam.zoomY = settings.zoomY;
+    beam.zoomX = tan(radians(max(settings.zoomX, 1)));
+    beam.zoomY = tan(radians(max(settings.zoomY, 1)));
 
-    float pi = 3.1415926535897;
     float ex = settings.nearSizeX + beam.zoomX * settings.farz;
     float ey = settings.nearSizeY + beam.zoomY * settings.farz;
     float minWidth = 0.05;
@@ -430,8 +430,8 @@ float3 LUTBeamFrag(BeamData beam)
         SceneDistance = 9999999;
     #endif
 
-    //if(!DepthExists())
-    //    SceneDistance = 9999999;
+    if(!DepthExists())
+        SceneDistance = 9999999;
 
     float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
     float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
@@ -564,8 +564,9 @@ float3 LUTBeamFrag(BeamData beam)
             goboResult *= volFacNotHot * beam.colorGobo;
 
             float4 grab = _GrabTexture.SampleLevel(trilinear_clamp_sampler, suv, 0);
-            //if(!DepthExists())
-            //    grab = 1;
+            #if LUTBEAM_AVATAR
+                grab = 1;
+            #endif
 
             col += grab.rgb * goboResult;
         }

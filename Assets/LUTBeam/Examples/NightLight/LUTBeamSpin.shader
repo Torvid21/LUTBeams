@@ -6,10 +6,8 @@ Shader "LUTBeam/Spin"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
-        _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
-        _NearSizeX ("_NearSizeX", Range(0,1)) = 0.1
-        _NearSizeY ("_NearSizeY", Range(0,1)) = 0.1
+        _Zoom ("_Zoom", Range(0, 120.0)) = 45
+        _NearSize ("_NearSize", Range(0,1)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
@@ -65,10 +63,8 @@ Shader "LUTBeam/Spin"
             Texture2DArray _GoboTex;
             Texture2DArray _GoboLUT;
             float _Offset;
-            float _ZoomX;
-            float _ZoomY;
-            float _NearSizeX;
-            float _NearSizeY;
+            float _Zoom;
+            float _NearSize;
             float _FarZ;
             float _Gobo;
             float4 _Color;
@@ -133,11 +129,11 @@ Shader "LUTBeam/Spin"
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
 
                 BeamSettings settings = DefaultBeamSettings();
-                settings.zoomX = _ZoomX;
-                settings.zoomY = _ZoomX;
+                settings.zoomX = _Zoom;
+                settings.zoomY = _Zoom;
                 settings.farz = _FarZ;
-                settings.nearSizeX = _NearSizeX;
-                settings.nearSizeY = _NearSizeX;
+                settings.nearSizeX = _NearSize;
+                settings.nearSizeY = _NearSize;
                 settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
