@@ -59,6 +59,15 @@ Material:
     - _FarZ: 25
     - _FarZMaxZoom: 10
     - _Focus: 0
+    - _Framing0A: 0
+    - _Framing0B: 0
+    - _Framing1A: 0
+    - _Framing1B: 0
+    - _Framing2A: 0
+    - _Framing2B: 0
+    - _Framing3A: 0
+    - _Framing3B: 0
+    - _FramingAngle: 0
     - _Frost: 0
     - _Gobo: 3.92
     - _GoboColorEnabled: 0

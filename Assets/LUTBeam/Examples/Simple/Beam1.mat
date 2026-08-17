@@ -68,7 +68,7 @@ Material:
     - _NearRadiusY: 0.1
     - _NearSizeX: 0.5
     - _NearSizeY: 0.5
-    - _Offset: 1
+    - _Offset: 0.212
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90

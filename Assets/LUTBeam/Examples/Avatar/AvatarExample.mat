@@ -34,10 +34,10 @@ Material:
     m_Ints:
     - _Gobo: 0
     m_Floats:
-    - _BeamFalloff: 3
-    - _BeamIntensity: 1
+    - _BeamFalloff: 1.33
+    - _BeamIntensity: 2.56
     - _FarZ: 25
-    - _GoboIntensity: 1
+    - _GoboIntensity: 3.1
     - _NearRadius: 0.1
     - _NearSize: 0.1
     - _Offset: 0.25
