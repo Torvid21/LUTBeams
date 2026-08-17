@@ -11,9 +11,7 @@ Material:
   m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
-  - LUTBEAM_FOCUS
-  - LUTBEAM_FRAMING
+  m_ValidKeywords: []
   m_InvalidKeywords:
   - LUTBEAM_FROST
   m_LightmapFlags: 4
@@ -45,9 +43,9 @@ Material:
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 2.54
+    - _BeamFalloff: 0
     - _BeamHotness: 0
-    - _BeamIntensity: 8.32
+    - _BeamIntensity: 16
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -61,12 +59,12 @@ Material:
     - _Falloff: 0
     - _FarZ: 50
     - _FarZMaxZoom: 10
-    - _Focus: 0.967
-    - _FocusEnabled: 1
+    - _Focus: 0
+    - _FocusEnabled: 0
     - _Focus_Aperture: 0
-    - _Focus_ApertureSize: 0.622
-    - _Framing0A: 0.506
-    - _Framing0B: 0
+    - _Focus_ApertureSize: 1
+    - _Framing0A: 0.643
+    - _Framing0B: 0.298
     - _Framing1A: 0
     - _Framing1B: 0
     - _Framing2A: 0
@@ -74,12 +72,12 @@ Material:
     - _Framing3A: 0
     - _Framing3B: 0
     - _FramingAngle: 0
-    - _FramingEnabled: 1
+    - _FramingEnabled: 0
     - _Frost: 0
     - _FrostEnabled: 1
     - _Gobo: 8
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 12.26
+    - _GoboIntensity: 7.58
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
@@ -108,8 +106,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0.2
-    - _ZoomY: 0.2
+    - _ZoomX: 0.75
+    - _ZoomY: 0.75
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

@@ -15,8 +15,6 @@ struct dummy_struct {};
     #undef CUSTOM_STRUCT_EXISTS
 #endif
 
-#pragma shader_feature RED GREEN
-
 #pragma multi_compile _ LUTBEAM_FRAMING
 #pragma multi_compile _ LUTBEAM_FOCUS
 
@@ -99,10 +97,10 @@ float _VRChatMirrorMode;
 
 bool DepthExists()
 {
-    uint Width = 0;
-    uint Height = 0;
-    _CameraDepthTexture.GetDimensions(Width, Height);
-    return !(Width == 16 && Height == 16);
+    //uint Width = 0;
+    //uint Height = 0;
+    //_CameraDepthTexture.GetDimensions(Width, Height);
+    return 1;//!(Width == 16 && Height == 16);
 }
 
 // NOTE(valuef): Mirrors use oblique clipping planes so we need to
@@ -222,8 +220,6 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float FocusZoomExtra = beam.focus*0.05 * settings.focus_apertureSize;
     beam.zoomX += FocusZoomExtra;
     beam.zoomY += FocusZoomExtra;
-    beam.focus = beam.focus;
-    beam.frost = beam.frost;
     beam.focus_apertureSize = settings.focus_apertureSize;
 #endif
 
@@ -434,7 +430,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float2 r1 = float2(cos(angle+tau*0.25), sin(angle+tau*0.25));
     float2 r2 = float2(cos(angle+tau*0.50), sin(angle+tau*0.50));
     float2 r3 = float2(cos(angle+tau*0.75), sin(angle+tau*0.75));
-
+    
     float invTwoL = 0.5;
 
     float f0A = settings.framing0A*2-1;
@@ -450,7 +446,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float3 plane1 = float3(r1 * (invTwoL * 2) + float2(r1.y, -r1.x) * (f1B - f1A), -invTwoL * (f1A + f1B));
     float3 plane2 = float3(r2 * (invTwoL * 2) + float2(r2.y, -r2.x) * (f2B - f2A), -invTwoL * (f2A + f2B));
     float3 plane3 = float3(r3 * (invTwoL * 2) + float2(r3.y, -r3.x) * (f3B - f3A), -invTwoL * (f3A + f3B));
-
+    
 #if LUTBEAM_FRAMING
     beam.bladePn = float4(-dot(plane0, beam.rayOrigin), -dot(plane1, beam.rayOrigin), -dot(plane2, beam.rayOrigin), -dot(plane3, beam.rayOrigin));
     beam.bladeDn = float4( dot(plane0, beam.rayDir),     dot(plane1, beam.rayDir),     dot(plane2, beam.rayDir),     dot(plane3, beam.rayDir));
@@ -498,7 +494,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
     //if(highQuality)
     //{
         float tex_size = start_size * end_size;
-
+    
         float2 posF          = saturate(start) * (start_size - 1.001);
         float2 cell          = floor(posF);
         float2 chunkblend    = posF - cell;
@@ -515,7 +511,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
         #else
             base = chunk + saturate(end) * (end_size - 1) + 0.5;
         #endif
-
+    
         #ifdef LUTBEAM_CALLBACK_VOLUME
             #ifdef CUSTOM_STRUCT_EXISTS
                 float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, mip, nestedStruct);
@@ -528,7 +524,7 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
                 float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, mip);
                 float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, mip);
             #endif
-
+    
             return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
         #else
             return 1;
@@ -536,28 +532,28 @@ float3 MagicSample(float2 start, float2 end, float2 pixel, bool highQuality, flo
     //}
     //else
     //{
-    //    // I realized I can sample just once, the angular resolution will look dithery
-    //    // but maybe we can get away with it, ahaha. I left the old verison commented out
-    //    // in case people get upset
-    //    float tex_size = start_size * end_size;
-    //    float2 n = Bayer4(pixel);
-    //    float2 posF = saturate(start) * (start_size - 1.001);
-    //    float2 cell  = floor(posF + n);
-    //    float2 chunk = cell * end_size;
-    //
-    //    float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
-    //
-    //    #ifdef LUTBEAM_CALLBACK_VOLUME
-    //        #ifdef CUSTOM_STRUCT_EXISTS
-    //            float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0, nestedStruct);
-    //        #else
-    //            float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0);
-    //        #endif
-    //    #else
-    //        float3 goboResult = float3(1, 1, 1);
-    //    #endif
-    //    
-    //    return goboResult;
+     //   // I realized I can sample just once, the angular resolution will look dithery
+     //   // but maybe we can get away with it, ahaha. I left the old verison commented out
+     //   // in case people get upset
+     //   float tex_size = start_size * end_size;
+     //   float2 n = Bayer2(pixel);
+     //   float2 posF = saturate(start) * (start_size - 1.001);
+     //   float2 cell  = floor(posF + n);
+     //   float2 chunk = cell * end_size;
+     //
+     //   float2 base = chunk + clamp(end * (end_size - 1), 0, end_size - 1) + 0.5;
+     //
+     //   #ifdef LUTBEAM_CALLBACK_VOLUME
+     //       #ifdef CUSTOM_STRUCT_EXISTS
+     //           float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0, nestedStruct);
+     //       #else
+     //           float3 goboResult = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, base / tex_size, 0);
+     //       #endif
+     //   #else
+     //       float3 goboResult = float3(1, 1, 1);
+     //   #endif
+     //   
+     //   return goboResult;
     //}
 }
 
@@ -580,8 +576,8 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
         SceneDistance = 9999999;
     #endif
 
-    if(!DepthExists())
-        SceneDistance = 9999999;
+    //if(!DepthExists())
+    //    SceneDistance = 9999999;
 
     float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
     float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
@@ -629,9 +625,6 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
         }
     }
 
-    if(tMax - tMin < 0.00001)
-        discard;
-
     #if LUTBEAM_FRAMING
         [branch]
         if(beam.framing > 0)
@@ -653,6 +646,9 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
             else tMin = max(tMin, t.w);
         }
     #endif
+
+    if(tMax - tMin < 0.00001)
+        discard;
 
     tMin = max(0, tMin);
     tMax = max(0, tMax);
@@ -685,7 +681,7 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
 
     float t = 0;
     float3 col = 0;
-    float falloff = 10;
+
 
     // closest point on ray
     float3 A  = entryPos - float3(0, 0, -frustumNearZ);
@@ -726,7 +722,7 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
 
     // early out if the fade would make it invisible anyways
     [branch]
-    if(volFac < 0.001 || framing < 0.001)
+    if (volFac * framing < 0.001)
         discard;
 
     col = MagicSample(entryNormalized.xy, exitNormalized.xy, beam.vertex.xy, highQuality, blur, beam.nestedStruct);
@@ -749,12 +745,10 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
 
     #if LUTBEAM_FRAMING
         [branch]
-        if(beam.framing > 0)
+        if (beam.framing)
         {
-            goboResult *= saturate(B0.r);
-            goboResult *= saturate(B0.g);
-            goboResult *= saturate(B0.b);
-            goboResult *= saturate(B0.a);
+            float4 s = saturate(B0);
+            goboResult *= s.x * s.y * s.z * s.w;
         }
     #endif
 
@@ -765,8 +759,8 @@ float3 LUTBeamFrag(BeamData beam, bool highQuality = true)
             goboResult *= volFacNotHot * beam.colorGobo;
 
             float4 grab = _GrabTexture.SampleLevel(trilinear_clamp_sampler, suv, 0);
-            if(!DepthExists())
-                grab = 1;
+            //if(!DepthExists())
+            //    grab = 1;
 
             col += grab.rgb * goboResult;
         }
