@@ -191,8 +191,19 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.aniso = float4(apexZX, apexZY, wX, wY);
 
     float p = settings.beamFalloff + 1e-4;
-
+    
+    // old falloff behaviour
+#if 1
+    float e = 0.01;
+    float Aa = 1.0 + e;
+    float3 q = float3(1.0, 2.0, 3.0) - p;
+    float3 G = (pow(Aa, q) - pow(e, q)) / q;
+    float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
+    float falloffNorm = 3.198 / I;
+#else
     float falloffNorm = exp2(3.26 - 1.54*p - 0.68*p*p);
+#endif
+
     beam.colorGobo = settings.color * settings.brightnessGobo * 5;
     beam.colorVolume = settings.color * settings.brightnessVolume * falloffNorm * 0.1; 
 
