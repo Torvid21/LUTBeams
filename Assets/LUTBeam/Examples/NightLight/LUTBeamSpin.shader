@@ -1,4 +1,4 @@
-Shader "LUTBeam/Spin"
+mShader "LUTBeam/Spin"
 {
     Properties
     {

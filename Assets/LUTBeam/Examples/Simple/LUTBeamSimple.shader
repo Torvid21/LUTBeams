@@ -128,6 +128,11 @@ Shader "LUTBeam/Simple"
                 settings.brightnessGobo = _GoboIntensity;
                 settings.beamFalloff = _BeamFalloff;
 
+                float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
+                float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
+                float minWidth = 0.05;
+                settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
+
                 o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;

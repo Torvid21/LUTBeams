@@ -165,14 +165,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
 {
     BeamData beam = (BeamData)0;
     
-    beam.zoomX = tan(radians(max(settings.zoomX, 1)));
-    beam.zoomY = tan(radians(max(settings.zoomY, 1)));
-
-    float ex = settings.nearSizeX + beam.zoomX * settings.farz;
-    float ey = settings.nearSizeY + beam.zoomY * settings.farz;
-    float minWidth = 0.05;
-    settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
-
+    beam.zoomX = tan(radians(max(settings.zoomX/2, 1)));
+    beam.zoomY = tan(radians(max(settings.zoomY/2, 1)));
 
     if ((!any(settings.color)) || (settings.brightnessVolume <= 0 && settings.brightnessGobo <= 0))
     {
