@@ -238,14 +238,14 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.vertex.z += frustumOffset;
     
     // special case, push the front corners in a little bit, makes it fit better
-    if(beam.vertex.z > 0 && length(beam.vertex.xy) > 0.1)
-    {
-        beam.vertex = vertexPos;
-        beam.vertex.z = lerp(0, frustumFarZ*0.9, t*farClipValue);
-        beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
-        beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
-        beam.vertex.z += frustumOffset;
-    }
+    //if(beam.vertex.z > 0 && length(beam.vertex.xy) > 0.1)
+    //{
+    //    beam.vertex = vertexPos;
+    //    beam.vertex.z = lerp(0, frustumFarZ*0.9, t*farClipValue);
+    //    beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
+    //    beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
+    //    beam.vertex.z += frustumOffset;
+    //}
 
     float3 right    = float3(1, 0, 0);
     float3 up       = float3(0, 1, 0);
