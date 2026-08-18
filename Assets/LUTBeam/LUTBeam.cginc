@@ -227,7 +227,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         else
             hi = mid;
     }
-    float farClipValue = max(lo, frustumNearZ/frustumFarZ);
+    float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
+    //float farClipValue = max(lo, frustumNearZ/frustumFarZ);
 
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
