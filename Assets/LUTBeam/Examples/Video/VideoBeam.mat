@@ -75,13 +75,20 @@ Material:
     - _PanMin: -90
     - _PanOffset: 0
     - _SpinMult: 4
+    - _StencilCompareFunction: 6
+    - _StencilFailOp: 0
+    - _StencilPassOp: 0
+    - _StencilReadMask: 255
+    - _StencilRef: 142
+    - _StencilWriteMask: 255
+    - _StencilZFailOp: 0
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
     - _Zoom: 0.28
-    - _ZoomX: 0.72
-    - _ZoomY: 0.32
+    - _ZoomX: 35
+    - _ZoomY: 20
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

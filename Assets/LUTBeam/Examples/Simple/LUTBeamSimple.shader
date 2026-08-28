@@ -6,15 +6,13 @@ Shader "LUTBeam/Simple"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
-        _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
+        _ZoomX ("_ZoomX", Range(0, 120.0)) = 45
+        _ZoomY ("_ZoomY", Range(0, 120.0)) = 45
         _NearSizeX ("_NearSizeX", Range(0,2)) = 0.1
         _NearSizeY ("_NearSizeY", Range(0,2)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         [IntRange] _Gobo ("Gobo Index", Range(0,16)) = 0
-        
-        _FramingAngle ("_FramingAngle", Range(0, 10.0)) = 0
 
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -28,7 +26,7 @@ Shader "LUTBeam/Simple"
         _Focus_ApertureSize ("_Focus_ApertureSize", Range(0, 1.0)) = 1
         _Frost ("_Frost", Range(0, 1.0)) = 0
 
-            
+        
         [Header(Framing Shutters)]
         [Toggle(LUTBEAM_FRAMING)] _FramingEnabled ("Enable", Float) = 0
             
@@ -46,6 +44,7 @@ Shader "LUTBeam/Simple"
         _Framing3B ("_Framing3B", Range(0, 1.0)) = 0
 
 
+        
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
         [IntRange] _StencilReadMask ("Read Mask", Range(0, 255)) = 255
@@ -119,7 +118,6 @@ Shader "LUTBeam/Simple"
             {
                 return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
-
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
@@ -142,6 +140,7 @@ Shader "LUTBeam/Simple"
             struct v2f
             {
                 BeamData beam;
+
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
@@ -178,6 +177,12 @@ Shader "LUTBeam/Simple"
                 settings.framing3B = _Framing3B;
                 settings.framingAngle = _FramingAngle;
 
+
+                float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
+                float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
+                float minWidth = 0.05;
+                settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
+
                 o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
@@ -189,7 +194,6 @@ Shader "LUTBeam/Simple"
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
                 float3 col = LUTBeamFrag(i.beam);
-
                 return float4(col, 0);
             }
             ENDCG

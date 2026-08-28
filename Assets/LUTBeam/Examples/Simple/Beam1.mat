@@ -8,7 +8,7 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: Beam1
-  m_Shader: {fileID: 4800000, guid: 1f82d4a92a7ad7a40a005e40a9c8392a, type: 3}
+  m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
@@ -36,15 +36,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _Gobo: -18
+    - _Gobo: 4
     m_Floats:
     - _: 1
     - _Angle: 0.441
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 0.71
+    - _BeamFalloff: 2.66
     - _BeamHotness: 1
-    - _BeamIntensity: 0.1
+    - _BeamIntensity: 2.35
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -54,27 +54,28 @@ Material:
     - _FadeDist: 1
     - _FadeMult: 1
     - _Falloff: 0
-    - _FarZ: 25
+    - _FarZ: 32.6
     - _FarZMaxZoom: 10
-    - _Focus: 1
+    - _Focus: 0
     - _Frost: 0
     - _Gobo: 6.71
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 0.23
+    - _GoboIntensity: 0
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.144
     - _NearRadiusX: 0.1
     - _NearRadiusY: 0.1
-    - _NearSizeX: 0.5
-    - _NearSizeY: 0.5
-    - _Offset: 0
+    - _NearSize: 0.1
+    - _NearSizeX: 0.408
+    - _NearSizeY: 1.842
+    - _Offset: 0.212
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90
     - _PanOffset: 0
     - _SpinMult: 4
-    - _SpinSpeed: 0.3
+    - _SpinSpeed: 1
     - _StencilCompareFunction: 6
     - _StencilFailOp: 0
     - _StencilPassOp: 0
@@ -86,9 +87,9 @@ Material:
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 0.5
-    - _ZoomX: 0
-    - _ZoomY: 0
+    - _Zoom: 55
+    - _ZoomX: 30.3
+    - _ZoomY: 21
     m_Colors:
     - _Color: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

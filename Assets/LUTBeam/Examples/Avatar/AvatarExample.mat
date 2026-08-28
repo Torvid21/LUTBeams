@@ -28,20 +28,20 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GoboTex:
-        m_Texture: {fileID: 18700000, guid: 56dc3461f5bb5524ba605eb0a6c077a1, type: 2}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
     - _Gobo: 0
     m_Floats:
-    - _BeamFalloff: 3
-    - _BeamIntensity: 3.36
-    - _FarZ: 49.9
-    - _GoboIntensity: 2.9
+    - _BeamFalloff: 1.33
+    - _BeamIntensity: 2.56
+    - _FarZ: 25
+    - _GoboIntensity: 3.1
     - _NearRadius: 0.1
-    - _NearSize: 0.077
+    - _NearSize: 0.1
     - _Offset: 0.25
-    - _Zoom: 0.387
+    - _Zoom: 24
     m_Colors:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

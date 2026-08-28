@@ -6,7 +6,7 @@ Shader "LUTBeam/Avatar"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2DArray) = "white" {}
 
         [Header(Shape)]
-        _Zoom ("_Zoom", Range(0, 2.0)) = 0.1
+        _Zoom ("_Zoom", Range(0, 120.0)) = 20
         _NearSize ("_NearSize", Range(0,1)) = 0.1
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
@@ -55,9 +55,8 @@ Shader "LUTBeam/Avatar"
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return 0;
+                return 0;//_GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
-
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
@@ -96,7 +95,7 @@ Shader "LUTBeam/Avatar"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-                
+
                 BeamSettings settings = DefaultBeamSettings();
                 settings.zoomX = _Zoom;
                 settings.zoomY = _Zoom;

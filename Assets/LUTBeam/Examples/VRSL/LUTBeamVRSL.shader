@@ -126,7 +126,7 @@ Shader "LUTBeam/VRSL"
                 UNITY_DEFINE_INSTANCED_PROP(float, _HorizontalWidth)
                 UNITY_DEFINE_INSTANCED_PROP(float, _VerticalWidth)
             UNITY_INSTANCING_BUFFER_END(Props)
-
+                
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
@@ -285,7 +285,7 @@ Shader "LUTBeam/VRSL"
                 float zoomFade = lerp(1, 0.1, saturate((_ZoomX+_ZoomY)*0.25));
                 
 		        half oscConeWidth = getDMXConeWidth(dmx);
-                
+
                 BeamSettings settings = DefaultBeamSettings();
                 settings.zoomX = _ZoomX*oscConeWidth;
                 settings.zoomY = _ZoomY*oscConeWidth;

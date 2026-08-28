@@ -6,8 +6,8 @@ Shader "LUTBeam/Video"
         [NoScaleOffset] _GoboLUT ("LUT Texture", 2D) = "white" {}
         
         [Header(Shape)]
-        _ZoomX ("_ZoomX", Range(0, 2.0)) = 0.1
-        _ZoomY ("_ZoomY", Range(0, 2.0)) = 0.1
+        _ZoomX ("_ZoomX", Range(0, 120.0)) = 45
+        _ZoomY ("_ZoomY", Range(0, 120.0)) = 30
         _Offset ("_Offset", Range(-1,1)) = 0.25
         _NearSizeX ("_NearSizeX", Range(0,1)) = 0.1
         _NearSizeY ("_NearSizeY", Range(0,1)) = 0.1
@@ -84,7 +84,6 @@ Shader "LUTBeam/Video"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
-            
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -112,13 +111,13 @@ Shader "LUTBeam/Video"
                 UNITY_INITIALIZE_OUTPUT(v2f, o);
                 UNITY_TRANSFER_INSTANCE_ID(v, o);
                 UNITY_INITIALIZE_VERTEX_OUTPUT_STEREO(o);
-                
+
                 BeamSettings settings = DefaultBeamSettings();
                 settings.zoomX = _ZoomX;
-                settings.zoomY = _ZoomY;
+                settings.zoomY = _ZoomX;
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
-                settings.nearSizeY = _NearSizeY;
+                settings.nearSizeY = _NearSizeX;
                 settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
