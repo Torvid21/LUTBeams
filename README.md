@@ -31,7 +31,7 @@ Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 - VRSL: Don't know but should be easy to integrate.
 
 ## Attribution
-All the code int Assets/LUTBeam/ is MIT / Public Domain.
+All the code in **Assets/LUTBeam/** is MIT / Public Domain, no attribution or liscence required
 
 Therinization image is by Nightshades
 
