@@ -20,7 +20,8 @@ Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 3. ???
 
 ### To change gobo (light cookie) images
-Right click LUTBeamManager component and click "Generate Texture Array".
+1. change one of the textures in LUTBeamManager
+2. Right click LUTBeamManager component and click "Generate Texture Array".
 
 <img src="Media/20260730221904896.png" width="75%"/>
 
