@@ -1,7 +1,8 @@
-# LUTBeams
-Still in active development, function signatures may change and stuff >>
+<img src="Media/logo_darkmode.png" />
 
 Volumetric light beams for VRChat. As seen in **Stage Flight** and **Furality**.
+
+_Still in active development, function signatures may change and stuff >>_
 
 Example uses:
 1. Spotlights for light shows
@@ -19,7 +20,8 @@ Either clone the whole project, or copy-paste Assets/LUTBeam/ into your project.
 3. ???
 
 ### To change gobo (light cookie) images
-Right click LUTBeamManager component and click "Generate Texture Array".
+1. change one of the textures in LUTBeamManager
+2. Right click LUTBeamManager component and click "Generate Texture Array".
 
 <img src="Media/20260730221904896.png" width="75%"/>
 
@@ -29,13 +31,13 @@ Right click LUTBeamManager component and click "Generate Texture Array".
 - VRSL: Don't know but should be easy to integrate.
 
 ## Attribution
-All the code int Assets/LUTBeam/ is MIT / Public Domain.
+All the code in **Assets/LUTBeam/** is MIT / Public Domain, no attribution or liscence required
 
 Therinization image is by Nightshades
 
 Tiles texture is from textures.com
 
-Gobos textures are mostly by me, don't 100% remember.
+Gobo textures are mostly by me, don't 100% remember.
 
 ## How?
 Raymarching volumetrics per pixel is way too expensive, I get around this by baking raymarch results to a lookup texture (LUT), so that they can later be grabbed very fast at runtime.
