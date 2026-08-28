@@ -37,7 +37,7 @@ Therinization image is by Nightshades
 
 Tiles texture is from textures.com
 
-Gobos textures are mostly by me, don't 100% remember.
+Gobo textures are mostly by me, don't 100% remember.
 
 ## How?
 Raymarching volumetrics per pixel is way too expensive, I get around this by baking raymarch results to a lookup texture (LUT), so that they can later be grabbed very fast at runtime.
