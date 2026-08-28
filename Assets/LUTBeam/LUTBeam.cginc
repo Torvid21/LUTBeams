@@ -265,8 +265,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         else
             hi = mid;
     }
-    float farClipValue = max(lo, 0.05);
-
+    float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(0, frustumFarZ, t*farClipValue);
@@ -337,7 +336,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float farClipped = lerp(frustumNearZ, frustumFarZ, farClipValue);
 
     float inside = min(-frustumNearZ - testCam.z, farClipped  + testCam.z);
-    float margin = 0.1;
+    float margin = 0.5;
     [unroll]
     for (int k = 0; k < 8; k++)
     {
