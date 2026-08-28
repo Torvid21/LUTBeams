@@ -71,16 +71,18 @@ Shader "LUTBeam/Video"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
-
+            float _Gobo;
+            
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, uv, 0).rgb;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
+
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
             float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, uv, 0).rgb;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
             #include "Assets/LUTBeam/LUTBeam.cginc"
         

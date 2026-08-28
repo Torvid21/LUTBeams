@@ -126,17 +126,17 @@ Shader "LUTBeam/VRSL"
                 UNITY_DEFINE_INSTANCED_PROP(float, _HorizontalWidth)
                 UNITY_DEFINE_INSTANCED_PROP(float, _VerticalWidth)
             UNITY_INSTANCING_BUFFER_END(Props)
-
+                
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboTex.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
 
             #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv)
+            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
             {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), 0).rrr;
+                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
             
             // VRSL STUB
@@ -288,10 +288,10 @@ Shader "LUTBeam/VRSL"
 
                 BeamSettings settings = DefaultBeamSettings();
                 settings.zoomX = _ZoomX*oscConeWidth;
-                settings.zoomY = _ZoomX*oscConeWidth;
+                settings.zoomY = _ZoomY*oscConeWidth;
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
-                settings.nearSizeY = _NearSizeX;
+                settings.nearSizeY = _NearSizeY;
                 settings.offset = _Offset;
                 settings.color = _Color * finalColor;
                 settings.brightnessVolume = _BeamIntensity;

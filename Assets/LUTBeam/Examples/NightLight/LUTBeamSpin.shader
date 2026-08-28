@@ -12,7 +12,7 @@ mShader "LUTBeam/Spin"
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
         _SpinSpeed ("_SpinSpeed", Float) = 0.1
-        _Frost ("_Frost", Range(0, 1.0)) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
         
         [Header(Color)]
         _Color ("Color", Color) = (1, 1, 1, 1)
@@ -72,7 +72,7 @@ mShader "LUTBeam/Spin"
             float _BeamIntensity;
             float _BeamFalloff;
             float _SpinSpeed;
-            float _Frost;
+            float _Focus;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)

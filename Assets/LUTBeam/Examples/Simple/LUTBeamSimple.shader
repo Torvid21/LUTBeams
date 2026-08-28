@@ -20,6 +20,31 @@ Shader "LUTBeam/Simple"
         _BeamFalloff ("_BeamFalloff", Range(0, 4.0)) = 1
         _GoboIntensity ("_GoboIntensity", Range(0, 16.0)) = 1
         
+        [Header(Focus)]
+        [Toggle(LUTBEAM_FOCUS)]   _FocusEnabled   ("Enable",    Float) = 0
+        _Focus ("_Focus", Range(0, 1.0)) = 0
+        _Focus_ApertureSize ("_Focus_ApertureSize", Range(0, 1.0)) = 1
+        _Frost ("_Frost", Range(0, 1.0)) = 0
+
+        
+        [Header(Framing Shutters)]
+        [Toggle(LUTBEAM_FRAMING)] _FramingEnabled ("Enable", Float) = 0
+            
+        //[Header(Framing 0)]
+        _Framing0A ("_Framing0A", Range(0, 1.0)) = 0
+        _Framing0B ("_Framing0B", Range(0, 1.0)) = 0
+        //[Header(Framing 1)]
+        _Framing1A ("_Framing1A", Range(0, 1.0)) = 0
+        _Framing1B ("_Framing1B", Range(0, 1.0)) = 0
+        //[Header(Framing 2)]
+        _Framing2A ("_Framing2A", Range(0, 1.0)) = 0
+        _Framing2B ("_Framing2B", Range(0, 1.0)) = 0
+        //[Header(Framing 3)]
+        _Framing3A ("_Framing3A", Range(0, 1.0)) = 0
+        _Framing3B ("_Framing3B", Range(0, 1.0)) = 0
+
+
+        
         [Header(Stencil)]
         [IntRange] _StencilRef ("Ref", Range(0, 255)) = 142
         [IntRange] _StencilReadMask ("Read Mask", Range(0, 255)) = 255
@@ -75,6 +100,18 @@ Shader "LUTBeam/Simple"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
+            float _Focus;
+            float _Focus_ApertureSize;
+            float _Frost;
+            float _Framing0A;
+            float _Framing0B;
+            float _Framing1A;
+            float _Framing1B;
+            float _Framing2A;
+            float _Framing2B;
+            float _Framing3A;
+            float _Framing3B;
+            float _FramingAngle;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
@@ -127,6 +164,19 @@ Shader "LUTBeam/Simple"
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;
                 settings.beamFalloff = _BeamFalloff;
+                settings.focus = _Focus;
+                settings.focus_apertureSize = _Focus_ApertureSize;
+                settings.frost = _Frost;
+                settings.framing0A = _Framing0A;
+                settings.framing0B = _Framing0B;
+                settings.framing1A = _Framing1A;
+                settings.framing1B = _Framing1B;
+                settings.framing2A = _Framing2A;
+                settings.framing2B = _Framing2B;
+                settings.framing3A = _Framing3A;
+                settings.framing3B = _Framing3B;
+                settings.framingAngle = _FramingAngle;
+
 
                 float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
                 float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;

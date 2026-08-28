@@ -14,6 +14,8 @@ struct dummy_struct {};
     #define NESTED_STRUCT_TYPE dummy_struct
     #undef CUSTOM_STRUCT_EXISTS
 #endif
+#pragma multi_compile _ LUTBEAM_FRAMING
+#pragma multi_compile _ LUTBEAM_FOCUS
 struct BeamSettings
 {
     float zoomX;
@@ -26,6 +28,18 @@ struct BeamSettings
     float brightnessVolume;
     float brightnessGobo;
     float beamFalloff;
+    float focus;
+    float focus_apertureSize;
+    float frost;
+    float framing0A;
+    float framing0B;
+    float framing1A;
+    float framing1B;
+    float framing2A;
+    float framing2B;
+    float framing3A;
+    float framing3B;
+    float framingAngle;
 };
 
 struct BeamData
@@ -52,6 +66,19 @@ struct BeamData
     NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
 
     noperspective float DepthFadeData : TEXCOORD56;
+
+#if LUTBEAM_FOCUS
+    nointerpolation float focus : TEXCOORD57;
+    nointerpolation float focus_apertureSize : TEXCOORD64;
+    nointerpolation float frost : TEXCOORD58;
+#endif
+
+#if LUTBEAM_FRAMING
+    nointerpolation float4 bladePn : TEXCOORD59;
+    float4 bladeDn : TEXCOORD60;
+    nointerpolation bool framing : TEXCOORD63;
+#endif
+
 };
 
 float inverselerp(float from, float to, float value)
@@ -157,6 +184,18 @@ BeamSettings DefaultBeamSettings()
     settings.brightnessVolume = 4;
     settings.brightnessGobo = 4;
     settings.beamFalloff = 2;
+    settings.focus = 0;
+    settings.focus_apertureSize = 1;
+    settings.frost = 0;
+    settings.framing0A = 0;
+    settings.framing0B = 0;
+    settings.framing1A = 0;
+    settings.framing1B = 0;
+    settings.framing2A = 0;
+    settings.framing2B = 0;
+    settings.framing3A = 0;
+    settings.framing3B = 0;
+    settings.framingAngle = 0;
     return settings;
 }
 #define pi 3.1415926535897
@@ -167,6 +206,15 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     
     beam.zoomX = tan(radians(max(settings.zoomX/2, 1)));
     beam.zoomY = tan(radians(max(settings.zoomY/2, 1)));
+    
+#if LUTBEAM_FOCUS
+    beam.focus = settings.focus;
+    beam.frost = settings.frost;
+    float FocusZoomExtra = beam.focus*0.05 * settings.focus_apertureSize;
+    beam.zoomX += FocusZoomExtra;
+    beam.zoomY += FocusZoomExtra;
+    beam.focus_apertureSize = settings.focus_apertureSize;
+#endif
 
     if ((!any(settings.color)) || (settings.brightnessVolume <= 0 && settings.brightnessGobo <= 0))
     {
@@ -192,17 +240,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
 
     float p = settings.beamFalloff + 1e-4;
     
-    // old falloff behaviour
-#if 1
-    float e = 0.01;
-    float Aa = 1.0 + e;
-    float3 q = float3(1.0, 2.0, 3.0) - p;
-    float3 G = (pow(Aa, q) - pow(e, q)) / q;
-    float  I = Aa*Aa*G.x - 2.0*Aa*G.y + G.z;
-    float falloffNorm = 3.198 / I;
-#else
     float falloffNorm = exp2(3.26 - 1.54*p - 0.68*p*p);
-#endif
 
     beam.colorGobo = settings.color * settings.brightnessGobo * 5;
     beam.colorVolume = settings.color * settings.brightnessVolume * falloffNorm * 0.1; 
@@ -228,8 +266,6 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
             hi = mid;
     }
     float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
-    //float farClipValue = max(lo, frustumNearZ/frustumFarZ);
-
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
     beam.vertex.z = lerp(0, frustumFarZ, t*farClipValue);
@@ -300,7 +336,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float farClipped = lerp(frustumNearZ, frustumFarZ, farClipValue);
 
     float inside = min(-frustumNearZ - testCam.z, farClipped  + testCam.z);
-    float margin = 0.1;
+    float margin = 0.5;
     [unroll]
     for (int k = 0; k < 8; k++)
     {
@@ -372,6 +408,52 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.frustumCorrection /= beam.vertex.w;
     beam.screenPosition /= beam.vertex.w;
 
+    float4 leftPlane   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+    float4 rightPlane  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+    float4 bottomPlane = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+    float4 topPlane    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+    float4 nearPlane   = float4(float3( 0,  0,  1), -beam.frustumNearZ);
+    float4 farPlane    = float4(float3( 0,  0, -1),  beam.frustumFarZ);
+    
+    float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
+    
+    float angle = settings.framingAngle;
+    float tau = 3.1415926536897 * 2;
+    float2 r0 = float2(cos(angle+tau*0.00), sin(angle+tau*0.00));
+    float2 r1 = float2(cos(angle+tau*0.25), sin(angle+tau*0.25));
+    float2 r2 = float2(cos(angle+tau*0.50), sin(angle+tau*0.50));
+    float2 r3 = float2(cos(angle+tau*0.75), sin(angle+tau*0.75));
+    
+    float invTwoL = 0.5;
+
+    float f0A = settings.framing0A*2-1;
+    float f0B = settings.framing0B*2-1;
+    float f1A = settings.framing1A*2-1;
+    float f1B = settings.framing1B*2-1;
+    float f2A = settings.framing2A*2-1;
+    float f2B = settings.framing2B*2-1;
+    float f3A = settings.framing3A*2-1;
+    float f3B = settings.framing3B*2-1;
+    
+    float3 plane0 = float3(r0 * (invTwoL * 2) + float2(r0.y, -r0.x) * (f0B - f0A), -invTwoL * (f0A + f0B));
+    float3 plane1 = float3(r1 * (invTwoL * 2) + float2(r1.y, -r1.x) * (f1B - f1A), -invTwoL * (f1A + f1B));
+    float3 plane2 = float3(r2 * (invTwoL * 2) + float2(r2.y, -r2.x) * (f2B - f2A), -invTwoL * (f2A + f2B));
+    float3 plane3 = float3(r3 * (invTwoL * 2) + float2(r3.y, -r3.x) * (f3B - f3A), -invTwoL * (f3A + f3B));
+    
+#if LUTBEAM_FRAMING
+    beam.bladePn = float4(-dot(plane0, beam.rayOrigin), -dot(plane1, beam.rayOrigin), -dot(plane2, beam.rayOrigin), -dot(plane3, beam.rayOrigin));
+    beam.bladeDn = float4( dot(plane0, beam.rayDir),     dot(plane1, beam.rayDir),     dot(plane2, beam.rayDir),     dot(plane3, beam.rayDir));
+    beam.framing = (
+        settings.framing0A > 0.1 || 
+        settings.framing0B > 0.1 || 
+        settings.framing1A > 0.1 || 
+        settings.framing1B > 0.1 || 
+        settings.framing2A > 0.1 || 
+        settings.framing2B > 0.1 || 
+        settings.framing3A > 0.1 || 
+        settings.framing3B > 0.1);
+#endif
+
     beam.invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
 
     return beam;
@@ -385,6 +467,20 @@ float Bayer2(float2 a)
 float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
 float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
+float CalculateMip(float t, float focus, float frost, float aperture)
+{
+    float A = 1;
+    t = sqrt(t);
+
+    float blur = abs(t-focus);
+    
+    blur = 1-blur;
+    blur = blur*blur*blur*blur;
+    blur = 1-blur;
+
+    return saturate(blur * aperture + frost);
+}
+
 
 float3 MagicSample(float2 start, float2 end, float blur, NESTED_STRUCT_TYPE nestedStruct)
 {
@@ -396,25 +492,34 @@ float3 MagicSample(float2 start, float2 end, float blur, NESTED_STRUCT_TYPE nest
     float2 chunkblendInv = 1 - chunkblend;
     float2 chunk         = cell * end_size;
         
-    float2 base = chunk + saturate(end) * (end_size - 1) + 0.5;
-    
-    #ifdef LUTBEAM_CALLBACK_VOLUME
-        #ifdef CUSTOM_STRUCT_EXISTS
-            float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0, nestedStruct);
-            float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0, nestedStruct);
-            float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0, nestedStruct);
-            float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0, nestedStruct);
+        float mip = 0;
+        float2 base = 0;
+        #if LUTBEAM_FOCUS
+            mip = blur * 2.5;
+            float margin = clamp(exp2(mip), 0.5, end_size * 0.5);
+            float2 inTile = margin + saturate(end) * (end_size - 2 * margin);
+            base = chunk + inTile;
         #else
-            float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, 0);
-            float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, 0);
-            float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, 0);
-            float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, 0);
+            base = chunk + saturate(end) * (end_size - 1) + 0.5;
         #endif
     
-        return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
-    #else
-        return 1;
-    #endif
+        #ifdef LUTBEAM_CALLBACK_VOLUME
+            #ifdef CUSTOM_STRUCT_EXISTS
+                float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, mip, nestedStruct);
+                float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, mip, nestedStruct);
+                float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, mip, nestedStruct);
+                float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, mip, nestedStruct);
+            #else
+                float3 s0 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        0))        / tex_size, mip);
+                float3 s1 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, 0))        / tex_size, mip);
+                float3 s2 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(0,        end_size)) / tex_size, mip);
+                float3 s3 = LUTBEAM_CALLBACK_VOLUME(trilinear_clamp_sampler, (base + float2(end_size, end_size)) / tex_size, mip);
+            #endif
+    
+            return (s0 * chunkblendInv.x + s1 * chunkblend.x) * chunkblendInv.y + (s2 * chunkblendInv.x + s3 * chunkblend.x) * chunkblend.y;
+        #else
+            return 1;
+        #endif
 }
 
 float3 LUTBeamFrag(BeamData beam)
@@ -485,6 +590,28 @@ float3 LUTBeamFrag(BeamData beam)
         }
     }
 
+    #if LUTBEAM_FRAMING
+        [branch]
+        if(beam.framing > 0)
+        {
+            float4 pn = beam.bladePn;
+            float4 dn = beam.bladeDn;
+            float4 t  = pn / dn;
+            
+            if (dn.x >= 0) tMax = min(tMax, t.x);
+            else tMin = max(tMin, t.x);
+    
+            if (dn.y >= 0) tMax = min(tMax, t.y);
+            else tMin = max(tMin, t.y);
+    
+            if (dn.z >= 0) tMax = min(tMax, t.z);
+            else tMin = max(tMin, t.z);
+    
+            if (dn.w >= 0) tMax = min(tMax, t.w);
+            else tMin = max(tMin, t.w);
+        }
+    #endif
+    
     if(tMax - tMin < 0.00001)
         discard;
 
@@ -538,7 +665,25 @@ float3 LUTBeamFrag(BeamData beam)
     float3 volColor = volFac * beam.colorVolume;
     
     float framing = 1;
+    
+    float penumbra = 10;
     float blur = 0;
+    #if LUTBEAM_FOCUS
+        blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_apertureSize);
+        penumbra = rcp((blur*4+1) * t);
+    #endif
+    
+    float4 B0 = 0;
+    #if LUTBEAM_FRAMING
+    [branch]
+    if(beam.framing > 0)
+    {
+        float4 A = (beam.bladePn - tMin * beam.bladeDn) * penumbra;
+        B0 = (beam.bladePn - tMax * beam.bladeDn) * penumbra;
+        float4 S = (saturate(A) + 4 * saturate(0.5 * (A + B0)) + saturate(B0)) * (1.0 / 6.0);
+        framing = S.x * S.y * S.z * S.w;
+    }
+    #endif
 
     // early out if the fade would make it invisible anyways
     [branch]
@@ -562,7 +707,15 @@ float3 LUTBeamFrag(BeamData beam)
         #else
             float3 goboResult = float3(1, 1, 1);
         #endif
-
+            
+    #if LUTBEAM_FRAMING
+        [branch]
+        if (beam.framing)
+        {
+            float4 s = saturate(B0);
+            goboResult *= s.x * s.y * s.z * s.w;
+        }
+    #endif
         // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
         [branch]
         if(any(goboResult))
