@@ -1,4 +1,5 @@
 # LUTBeams
+<img src="Media/logo_darkmode.png" />
 Still in active development, function signatures may change and stuff >>
 
 Volumetric light beams for VRChat. As seen in **Stage Flight** and **Furality**.
