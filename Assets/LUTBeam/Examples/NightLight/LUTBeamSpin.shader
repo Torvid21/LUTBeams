@@ -1,4 +1,4 @@
-mShader "LUTBeam/Spin"
+Shader "LUTBeam/Spin"
 {
     Properties
     {
@@ -29,6 +29,7 @@ mShader "LUTBeam/Spin"
         [Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Fail Op", Float) = 0
         [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("ZFail Op", Float) = 0
     }
+
     SubShader
     {
         Tags {"RenderType"="Transparent" "Queue"="Transparent+303" }
