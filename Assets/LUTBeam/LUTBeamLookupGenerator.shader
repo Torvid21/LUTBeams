@@ -86,7 +86,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
             // zoom the UV in a little so the blur doesn't kill us.
             float2 scaledUV(float2 uv)
             {
-                return (uv-0.5) * 1 + 0.5;
+                return (uv-0.5) * 1.25 + 0.5;
             }
             float4 frag(v2f input) : SV_Target
             {

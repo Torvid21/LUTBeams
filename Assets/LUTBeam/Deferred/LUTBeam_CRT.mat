@@ -1,0 +1,44 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: LUTBeam_CRT
+  m_Shader: {fileID: 4800000, guid: f0d0a8fdd0c945a4bb433e4bcda83174, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs: []
+    m_Ints: []
+    m_Floats:
+    - _BeamFalloff: 1
+    - _BeamIntensity: 1
+    - _FarZ: 25
+    - _Focus: 0
+    - _FocusEnabled: 0
+    - _Focus_ApertureSize: 1
+    - _Frost: 0
+    - _Gobo: 3
+    - _GoboIntensity: 1
+    - _NearSizeX: 0.1
+    - _NearSizeY: 0.1
+    - _Offset: 0.25
+    - _ZoomX: 49.5
+    - _ZoomY: 45
+    m_Colors:
+    - _Color: {r: 1, g: 0.16944128, b: 0, a: 1}
+  m_BuildTextureStacks: []

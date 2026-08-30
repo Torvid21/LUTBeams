@@ -14,8 +14,10 @@ struct dummy_struct {};
     #define NESTED_STRUCT_TYPE dummy_struct
     #undef CUSTOM_STRUCT_EXISTS
 #endif
-#pragma multi_compile _ LUTBEAM_FRAMING
-#pragma multi_compile _ LUTBEAM_FOCUS
+
+//#pragma multi_compile _ LUTBEAM_FRAMING
+//#pragma multi_compile _ LUTBEAM_FOCUS
+
 struct BeamSettings
 {
     float zoomX;
