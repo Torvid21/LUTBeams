@@ -18,6 +18,8 @@ struct dummy_struct {};
 //#pragma multi_compile _ LUTBEAM_FRAMING
 //#pragma multi_compile _ LUTBEAM_FOCUS
 
+#define LUTBEAM_OCTAGON 1
+
 struct BeamSettings
 {
     float zoomX;
@@ -247,11 +249,15 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         else
             hi = mid;
     }
-
-    float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
+    
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
+#if LUTBEAM_OCTAGON
+    float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
     beam.vertex.z = lerp(0, frustumFarZ, t*farClipValue);
+#else
+    beam.vertex.z = lerp(frustumNearZ, frustumFarZ, t);
+#endif
     beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
     beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
     beam.vertex.z += frustumOffset;
@@ -311,9 +317,10 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     #endif
     testCam = mul(WorldToFrustum, float4(testCam, 1)).xyz;
 
+    // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
+#if LUTBEAM_OCTAGON
     // Changed the mesh to an octagon, so inside-frustum-check needs 8 planes now.
     float farClipped = lerp(frustumNearZ, frustumFarZ, farClipValue);
-
     float inside = min(-frustumNearZ - testCam.z, farClipped  + testCam.z);
     float margin = 0.5;
     [unroll]
@@ -329,6 +336,20 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         inside = min(inside, dist);
     }
     bool useQuad = inside > -margin;
+#else
+    float invLenX = rsqrt(1 + beam.zoomX * beam.zoomX);
+    float invLenY = rsqrt(1 + beam.zoomY * beam.zoomY);
+    float inside = min(min(
+        min((wX - dot(float3( 1, 0, beam.zoomX), testCam)) * invLenX,
+            (wX - dot(float3(-1, 0, beam.zoomX), testCam)) * invLenX),
+        min((wY - dot(float3( 0,-1, beam.zoomY), testCam)) * invLenY,
+            (wY - dot(float3( 0, 1, beam.zoomY), testCam)) * invLenY)),
+        min(-frustumNearZ - testCam.z,
+             frustumFarZ  + testCam.z));
+
+    float margin = 0.25;
+    bool useQuad = inside > -margin;
+#endif
 
     // 2. Mirrors can cut open a hole in the beam, push the beam back in that case so it gently touches the mirror surface.
     if (_VRChatMirrorMode != 0)
