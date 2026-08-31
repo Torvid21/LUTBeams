@@ -11,9 +11,9 @@ Material:
   m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
-  m_ValidKeywords:
+  m_ValidKeywords: []
+  m_InvalidKeywords:
   - LUTBEAM_FOCUS
-  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -45,7 +45,7 @@ Material:
     - _AngleMin: 0.1
     - _BeamFalloff: 1
     - _BeamHotness: 0
-    - _BeamIntensity: 2.23
+    - _BeamIntensity: 4.31
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -73,15 +73,15 @@ Material:
     - _FramingAngle: 0
     - _FramingEnabled: 0
     - _Frost: 0
-    - _Gobo: 5
+    - _Gobo: 1
     - _GoboColorEnabled: 0
     - _GoboIntensity: 3.5
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
-    - _NearSizeX: 0.1
-    - _NearSizeY: 0.1
-    - _Offset: 0.15
+    - _NearSizeX: 1.38
+    - _NearSizeY: 0.67
+    - _Offset: -1
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90
@@ -105,8 +105,8 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 20
-    - _ZoomY: 20
+    - _ZoomX: 32
+    - _ZoomY: 32
     m_Colors:
     - _Color: {r: 0.65605026, g: 1, b: 0.5566037, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}

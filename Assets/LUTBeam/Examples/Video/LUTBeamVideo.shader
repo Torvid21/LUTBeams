@@ -118,7 +118,7 @@ Shader "LUTBeam/Video"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
                 settings.nearSizeY = _NearSizeX;
-                settings.offset = _Offset;
+                //settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;

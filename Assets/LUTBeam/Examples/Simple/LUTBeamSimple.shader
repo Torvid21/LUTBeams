@@ -123,7 +123,13 @@ Shader "LUTBeam/Simple"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
-            
+            #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
+            float3 LUTBeamCallbackTransform(float3 vertex)
+            {
+                return vertex + float3(0,0,_Offset);
+            }
+
+
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -159,7 +165,6 @@ Shader "LUTBeam/Simple"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
                 settings.nearSizeY = _NearSizeY;
-                settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;
@@ -178,8 +183,8 @@ Shader "LUTBeam/Simple"
                 //settings.framingAngle = _FramingAngle;
 
 
-                float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
-                float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
+                float ex = settings.nearSizeX*10 + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
+                float ey = settings.nearSizeY*10 + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
                 float minWidth = 0.05;
                 settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
 

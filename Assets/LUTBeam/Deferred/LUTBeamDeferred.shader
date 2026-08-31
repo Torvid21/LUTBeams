@@ -76,7 +76,7 @@ Shader "LUTBeam/Deferred"
 
         LOD 100
 
-        Cull Back
+        Cull Off
         ZTest LEqual
         ZWrite Off
 
@@ -87,7 +87,7 @@ Shader "LUTBeam/Deferred"
             ColorMask RGB
 
             CGPROGRAM
-            
+
             #pragma multi_compile_instancing
 
             #include "UnityCG.cginc"
@@ -129,8 +129,6 @@ Shader "LUTBeam/Deferred"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
             }
-
-            bool 
 
             // I dedicate this work to the public domain. Do as you will.
             // Initial implementation by Torvid
@@ -203,8 +201,9 @@ Shader "LUTBeam/Deferred"
                 nointerpolation float4 aniso : TEXCOORD53;
                 nointerpolation float falloff : TEXCOORD54;
                 NESTED_STRUCT_TYPE nestedStruct : TEXCOORD55;
-
+                
                 noperspective float DepthFadeData : TEXCOORD56;
+                nointerpolation float3 counter : TEXCOORD20;
 
             #if LUTBEAM_FOCUS
                 nointerpolation float focus : TEXCOORD57;
@@ -289,6 +288,16 @@ Shader "LUTBeam/Deferred"
                 result.y = dot(a-apex, up);
                 result.z = dot(a-apex, forward);
                 return result;
+            }
+
+            float3 FrustumToWorldVector(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+            {
+                return (right * a.x) + (up * a.y) + (forward * a.z);
+            }
+
+            float3 FrustumToWorldPosition(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+            {
+                return apex + (right * a.x) + (up * a.y) + (forward * a.z);
             }
 
             float4x4 ObjectToWorld_NoScale()
@@ -411,7 +420,171 @@ Shader "LUTBeam/Deferred"
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
             };
+
+            // check if p falls on the left or right of line formed by a-b
+            float leftCheck(float2 a, float2 b, float2 p)
+            {
+                float checkValue = ((b.x-a.x) * (p.y-a.y) - (b.y-a.y) * (p.x-a.x));
+                return checkValue;
+            }
             
+            void giftwrap(float2 a[8], out float2 perimeter[8], out int perimeterCount)
+            {
+                // 1. find leftmost point
+                int currentPoint = 0;
+                float leftmost = a[0].x;
+                for (int i = 1; i < 8; i++)
+                {
+                    if(a[i].x < leftmost)
+                    {
+                        leftmost = a[i].x;
+                        currentPoint = i;
+                    }
+                }
+                int startPoint = currentPoint;
+            
+                // check max 8 times
+                for (int q = 0; q < 8; q++)
+                {
+                    // trace from the current point to every other point
+                    for (int i = 0; i < 8; i++)
+                    {
+                        if(i == currentPoint)
+                            continue;
+            
+                        // check if all points are to the left
+                        bool allLeft = true;
+                        for (int j = 0; j < 8; j++)
+                        {
+                            if(i == j || j == currentPoint)
+                                continue;
+            
+                            float check = leftCheck(a[i], a[currentPoint], a[j]);
+                            if(check > 0)
+                            {
+                                allLeft = false;
+                                break;
+                            }
+                        }
+            
+                        // If all points are to the left, store it in the perimeter array
+                        if(allLeft)
+                        {
+                            perimeter[perimeterCount] = a[i];
+                            currentPoint = i;
+                            perimeterCount++;
+                            break;
+                        }
+                    }
+                    // If we get back to where we started, we are done
+                    if(startPoint == currentPoint)
+                        break;
+                }
+            }
+
+            float4 PlaneToWorld(float4 p, float3 right, float3 up, float3 forward, float3 apex)
+            {
+                float3 n = p.x * right + p.y * up + p.z * forward;
+                return float4(n, p.w - dot(apex, n));
+            }
+
+            float3 plane_intersect3(float4 a, float4 b, float4 c)
+            {
+                float3 bc = cross(b.xyz, c.xyz);
+                float3 ca = cross(c.xyz, a.xyz);
+                float3 ab = cross(a.xyz, b.xyz);
+                return -(a.w * bc + b.w * ca + c.w * ab) / dot(a.xyz, bc);
+            }
+
+            void frustum_corners(float4 L, float4 R, float4 B, float4 T,
+                                 float4 N, float4 F, out float3 c[8])
+            {
+                [unroll]
+                for (int i = 0; i < 8; i++)
+                {
+                    c[i] = plane_intersect3((i & 1) ? R : L,
+                                            (i & 2) ? T : B,
+                                            (i & 4) ? F : N);
+                }
+            }
+
+            bool all_outside(float4 p, float3 c[8])
+            {
+                [unroll]
+                for (int i = 0; i < 8; i++)
+                {
+                    if (dot(p.xyz, c[i]) + p.w >= 0.0)
+                        return false;
+                }
+                return true;
+            }
+
+            bool separated_on_axis(float3 axis, float3 a[8], float3 b[8])
+            {
+                float aMin =  1e30, aMax = -1e30;
+                float bMin =  1e30, bMax = -1e30;
+                [unroll] for (int i = 0; i < 8; i++)
+                {
+                    float da = dot(axis, a[i]);  aMin = min(aMin, da);  aMax = max(aMax, da);
+                    float db = dot(axis, b[i]);  bMin = min(bMin, db);  bMax = max(bMax, db);
+                }
+                return (aMax < bMin) || (bMax < aMin);
+            }
+
+            bool frustum_overlap(float4 plane0Left, float4 plane0Right, float4 plane0Bottom,
+                                 float4 plane0Top,  float4 plane0Near,  float4 plane0Far,
+                                 float4 plane1Left, float4 plane1Right, float4 plane1Bottom,
+                                 float4 plane1Top,  float4 plane1Near,  float4 plane1Far)
+            {
+                float3 c0[8];
+                float3 c1[8];
+                frustum_corners(plane0Left, plane0Right, plane0Bottom,
+                                plane0Top,  plane0Near,  plane0Far,  c0);
+                frustum_corners(plane1Left, plane1Right, plane1Bottom,
+                                plane1Top,  plane1Near,  plane1Far,  c1);
+
+                if (all_outside(plane0Left,   c1)) return false;
+                if (all_outside(plane0Right,  c1)) return false;
+                if (all_outside(plane0Bottom, c1)) return false;
+                if (all_outside(plane0Top,    c1)) return false;
+                if (all_outside(plane0Near,   c1)) return false;
+                if (all_outside(plane0Far,    c1)) return false;
+
+                if (all_outside(plane1Left,   c0)) return false;
+                if (all_outside(plane1Right,  c0)) return false;
+                if (all_outside(plane1Bottom, c0)) return false;
+                if (all_outside(plane1Top,    c0)) return false;
+                if (all_outside(plane1Near,   c0)) return false;
+                if (all_outside(plane1Far,    c0)) return false;
+
+                //#if 0
+                //    float3 e0[6], e1[6];
+                //    e0[0] = c0[1] - c0[0];  e0[1] = c0[2] - c0[0];
+                //    e0[2] = c0[4] - c0[0];  e0[3] = c0[5] - c0[1];
+                //    e0[4] = c0[6] - c0[2];  e0[5] = c0[7] - c0[3];
+                //    e1[0] = c1[1] - c1[0];  e1[1] = c1[2] - c1[0];
+                //    e1[2] = c1[4] - c1[0];  e1[3] = c1[5] - c1[1];
+                //    e1[4] = c1[6] - c1[2];  e1[5] = c1[7] - c1[3];
+                //
+                //    [unroll] for (int i = 0; i < 6; i++)
+                //    [unroll] for (int j = 0; j < 6; j++)
+                //    {
+                //        float3 axis = cross(e0[i], e1[j]);
+                //        if (dot(axis, axis) < 1e-12) continue;   // parallel edges
+                //        if (separated_on_axis(axis, c0, c1)) return false;
+                //    }
+                //#endif
+
+                return true;
+            }
+
+            float3 rayPlane(float4 plane, float3 rayDir, float3 rayOrigin)
+            {
+                float denom = dot(plane.xyz, rayDir);
+                float t = (plane.w - dot(plane.xyz, rayOrigin)) / denom;
+                return rayOrigin+rayDir*t;
+            }
+
             v2f vert(appdata v)
             {
                 v2f o;
@@ -435,12 +608,12 @@ Shader "LUTBeam/Deferred"
                 // Line5 - Gobo, _Focus, _Focus_ApertureSize, _Frost
                 // _Framing0A _Framing0B _Framing1A _Framing1B
                 // _Framing2A _Framing2B _Framing3A _Framing3B
-                int offset = 100 * 4;
-                if(v.uv.x < _Test)
-                {
-                    o.beam.vertex = asfloat(-1);
-                    return o;
-                }
+                //int offset = 100 * 4;
+                //if(v.uv.x < _Test)
+                //{
+                //    o.beam.vertex = asfloat(-1);
+                //    return o;
+                //}
 
 
                 BeamSettings settings = DefaultBeamSettings();
@@ -559,15 +732,6 @@ Shader "LUTBeam/Deferred"
                 float3 corrected_pos = 0;
                 float3 frustumOffsetVector = float3(0, 0, frustumOffset);
 
-                #ifdef LUTBEAM_CALLBACK_VERTEX
-                    corrected_pos = LUTBEAM_CALLBACK_VERTEX(float3(0, 0, 0));
-                    beam.vertex.xyz = LUTBEAM_CALLBACK_VERTEX(beam.vertex.xyz);
-                    forward = LUTBEAM_CALLBACK_VERTEX(forward) - corrected_pos;
-                    right = LUTBEAM_CALLBACK_VERTEX(right) - corrected_pos;
-                    up = LUTBEAM_CALLBACK_VERTEX(up) - corrected_pos;
-                    frustumOffsetVector = LUTBEAM_CALLBACK_VERTEX(frustumOffsetVector) - corrected_pos;
-                #endif
-    
                 forward = normalize(mul(ObjectToWorld_NoScale(), float4(forward, 0)).xyz);
                 right   = normalize(mul(ObjectToWorld_NoScale(), float4(right, 0)).xyz);
                 up      = normalize(mul(ObjectToWorld_NoScale(), float4(up, 0)).xyz);
@@ -592,20 +756,59 @@ Shader "LUTBeam/Deferred"
 
                 beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
                 float3 worldPosLocal = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
-   
+                
+                float4 plane0Left   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+                float4 plane0Right  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+                float4 plane0Bottom = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+                float4 plane0Top    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+                float4 plane0Near   = float4(float3(0, 0, 1), -beam.frustumNearZ);
+                float4 plane0Far    = float4(float3(0, 0, -1), beam.frustumFarZ);
+
+                plane0Left   = PlaneToWorld(plane0Left   , right, up, forward, apex);
+                plane0Right  = PlaneToWorld(plane0Right  , right, up, forward, apex);
+                plane0Bottom = PlaneToWorld(plane0Bottom , right, up, forward, apex);
+                plane0Top    = PlaneToWorld(plane0Top    , right, up, forward, apex);
+                plane0Near   = PlaneToWorld(plane0Near   , right, up, forward, apex);
+                plane0Far    = PlaneToWorld(plane0Far    , right, up, forward, apex);
+                
+                float xMin = (v.uv.x * 2 - 1);
+                float xMax = (v.uv.x * 2 - 1);//+(1.0/16);
+                float yMin = (v.uv.y * 2 - 1);
+                float yMax = (v.uv.y * 2 - 1);//+(1.0/16);
+
+                float4 R0 = UNITY_MATRIX_VP[0];
+                float4 R1 = UNITY_MATRIX_VP[1];
+                float4 R2 = UNITY_MATRIX_VP[2];
+                float4 R3 = UNITY_MATRIX_VP[3];
+
+                float4 plane1Left   = R0 - xMin * R3;
+                float4 plane1Right  = xMax * R3 - R0;
+                float4 plane1Bottom = R1 - yMin * R3;
+                float4 plane1Top    = yMax * R3 - R1;
+                //#if UNITY_REVERSED_Z
+                    float4 plane1Near = R3 - R2;
+                    float4 plane1Far  = R2;
+                //#else
+                //    float4 plane1Near = R2 + R3;
+                //    float4 plane1Far  = R3 - R2;
+                //#endif
+
+                bool check = frustum_overlap(plane0Left, plane0Right, plane0Bottom,
+                                             plane0Top,  plane0Near,  plane0Far,
+                                             plane1Left, plane1Right, plane1Bottom,
+                                             plane1Top,  plane1Near,  plane1Far);
+
+                float3 hitPos = rayPlane(plane0Far, rayDir, rayOrigin);
+                beam.vertex = mul(UNITY_MATRIX_VP, float4(hitPos, 1));
 
                 bool useQuad = true;
-
                 // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
                 if (useQuad)
                 {
-                    //beam.vertex = float4(sign(vertexPos.x), sign(vertexPos.y), UNITY_NEAR_CLIP_VALUE, 1.0);
-                    vertexPos.y = -vertexPos.y;
-                    
-                    float2 ndc = (vertexPos.xy) * 1.0;
-
-                    beam.vertex = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1);//float4(ndc, UNITY_NEAR_CLIP_VALUE, 1.0);
-    
+                    //vertexPos.y = -vertexPos.y;
+                    float2 ndc = (vertexPos.xy);
+                    beam.vertex = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1);
+                
                     float d = 4.0;
                     float3 viewPos = float3(
                         d * (ndc.x + UNITY_MATRIX_P._m02) / UNITY_MATRIX_P._m00,
@@ -617,7 +820,10 @@ Shader "LUTBeam/Deferred"
                     beam.screenPosition    = ComputeScreenPos(beam.vertex).xy;
                     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
                 }
-    
+                
+                //if(check)
+                //    beam.vertex = asfloat(-1);
+                beam.counter = check ? 1 : 0;
                 beam.rayDir = (worldPosLocal - beam.rayOrigin);
 
                 beam.DepthFadeData = UNITY_MATRIX_P._34 / dot(cameraForward, beam.rayDir);
@@ -629,7 +835,6 @@ Shader "LUTBeam/Deferred"
                 beam.invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
 
                 o.beam = beam;
-                //o.beam = LUTBeamVert(v.vertex, settings);
 
                 return o;
             }
@@ -639,9 +844,9 @@ Shader "LUTBeam/Deferred"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                
                 BeamData beam = i.beam;
-                
+                return float4(i.beam.counter, 1);
+
                 float beamFalloff = beam.falloff;
                 float frustumNearZ = beam.frustumNearZ;
                 float frustumFarZ = beam.frustumFarZ;
@@ -735,6 +940,7 @@ Shader "LUTBeam/Deferred"
 
                 tMin = max(0, tMin);
                 tMax = max(0, tMax);
+
     
                 bool hit = (tMax > SceneDistance) && (SceneDistance > 0.000001);
 

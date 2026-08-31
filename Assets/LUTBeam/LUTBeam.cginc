@@ -25,7 +25,6 @@ struct BeamSettings
     float farz;
     float nearSizeX;
     float nearSizeY;
-    float offset;
     float3 color;
     float brightnessVolume;
     float brightnessGobo;
@@ -137,24 +136,6 @@ float2 EdgeDecode(float t)
     else return float2(0.0, 4.0 - ft);
 }
 
-float3 WorldToFrustumVector(float3 apex, float3 forward, float3 right, float3 up, float3 a)
-{
-    float3 result = 0;
-    result.x = dot(a, right);
-    result.y = dot(a, up);
-    result.z = dot(a, forward);
-    return result;
-}
-
-float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 up, float3 a)
-{
-    float3 result = 0;
-    result.x = dot(a-apex, right);
-    result.y = dot(a-apex, up);
-    result.z = dot(a-apex, forward);
-    return result;
-}
-
 float4x4 ObjectToWorld_NoScale()
 {
     float3 right   = normalize(float3(unity_ObjectToWorld._m00, unity_ObjectToWorld._m10, unity_ObjectToWorld._m20));
@@ -181,7 +162,6 @@ BeamSettings DefaultBeamSettings()
     settings.farz = 50;
     settings.nearSizeX = 0.1;
     settings.nearSizeY = 0.1;
-    settings.offset = 0;
     settings.color = 1;
     settings.brightnessVolume = 4;
     settings.brightnessGobo = 4;
@@ -232,7 +212,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float apexDistY = settings.nearSizeY / beam.zoomY;
     float frustumNearZ  = max(apexDistX, apexDistY);
     float frustumFarZ   = frustumNearZ + settings.farz;
-    float frustumOffset = -frustumNearZ + settings.offset;
+    float frustumOffset = -frustumNearZ;
 
     float apexZX = frustumNearZ - apexDistX;
     float apexZY = frustumNearZ - apexDistY;
@@ -274,16 +254,6 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
     beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
     beam.vertex.z += frustumOffset;
-    
-    // special case, push the front corners in a little bit, makes it fit better
-    //if(beam.vertex.z > 0 && length(beam.vertex.xy) > 0.1)
-    //{
-    //    beam.vertex = vertexPos;
-    //    beam.vertex.z = lerp(0, frustumFarZ*0.9, t*farClipValue);
-    //    beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
-    //    beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
-    //    beam.vertex.z += frustumOffset;
-    //}
 
     float3 right    = float3(1, 0, 0);
     float3 up       = float3(0, 1, 0);
@@ -321,10 +291,16 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
 
     float3 objectPos = mul(ObjectToWorld_NoScale(), float4(0, 0, 0, 1));
 
-    float3 cameraForward = WorldToFrustumVector(apex, forward, right, up, unity_CameraToWorld._m02_m12_m22);
+    float4x4 WorldToFrustum = float4x4(
+        right.x,   right.y,   right.z,   -dot(right,   apex),
+        up.x,      up.y,      up.z,      -dot(up,      apex),
+        forward.x, forward.y, forward.z, -dot(forward, apex),
+        0,         0,         0,          1);
 
-    beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
-    float3 worldPosLocal = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
+    float3 cameraForward = mul(WorldToFrustum, unity_CameraToWorld._m02_m12_m22).xyz;
+
+    beam.rayOrigin = mul(WorldToFrustum, float4(rayOrigin, 1)).xyz;
+    float3 worldPosLocal = mul(WorldToFrustum, float4(worldPos.xyz, 1)).xyz;
     
     // 1. Camera-inside test, check if the camera is inside the beam frustum and make it a fullscreen-quad in that case.
     #if defined(USING_STEREO_MATRICES)
@@ -332,7 +308,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     #else
         float3 testCam = _WorldSpaceCameraPos;
     #endif
-    testCam = WorldToFrustumPosition(apex, forward, right, up, testCam);
+    testCam = mul(WorldToFrustum, float4(testCam, 1)).xyz;
 
     // Changed the mesh to an octagon, so inside-frustum-check needs 8 planes now.
     float farClipped = lerp(frustumNearZ, frustumFarZ, farClipValue);
@@ -359,7 +335,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         // Also generate a clipping plane so it can be cut nice and volumetric-ly at the surface of the mirror..
         float4 mirrorPlane = float4(UNITY_MATRIX_VP._m30, UNITY_MATRIX_VP._m31, UNITY_MATRIX_VP._m32, UNITY_MATRIX_VP._m33) -
                              float4(UNITY_MATRIX_VP._m20, UNITY_MATRIX_VP._m21, UNITY_MATRIX_VP._m22, UNITY_MATRIX_VP._m23);
-        float3 planeNormal = WorldToFrustumVector(apex, forward, right, up, mirrorPlane.xyz);
+        float3 planeNormal = mul(WorldToFrustum, float4(mirrorPlane.xyz, 0)).xyz;
         float planeOffset = dot(mirrorPlane.xyz, apex) + mirrorPlane.w;
         beam.clipPlane = float4(-planeNormal, planeOffset) / length(planeNormal);
         
@@ -378,7 +354,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
             beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
             beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
             beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
-            worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, worldPos);
+            worldPosLocal.xyz = mul(WorldToFrustum, float4(worldPos, 1)).xyz;
         }
     }
 
@@ -397,7 +373,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
             -d);
         float3 wp = mul(UNITY_MATRIX_I_V, float4(viewPos, 1)).xyz;
     
-        worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, wp);
+        worldPosLocal.xyz = mul(WorldToFrustum, float4(wp, 1)).xyz;
         beam.screenPosition    = ComputeScreenPos(beam.vertex).xy;
         beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
     }

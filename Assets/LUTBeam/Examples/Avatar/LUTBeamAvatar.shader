@@ -102,7 +102,7 @@ Shader "LUTBeam/Avatar"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSize;
                 settings.nearSizeY = _NearSize;
-                settings.offset = _Offset;
+                //settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;

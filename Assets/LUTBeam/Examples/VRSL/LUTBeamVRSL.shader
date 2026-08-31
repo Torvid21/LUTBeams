@@ -292,7 +292,7 @@ Shader "LUTBeam/VRSL"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
                 settings.nearSizeY = _NearSizeY;
-                settings.offset = _Offset;
+                //settings.offset = _Offset;
                 settings.color = _Color * finalColor;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;

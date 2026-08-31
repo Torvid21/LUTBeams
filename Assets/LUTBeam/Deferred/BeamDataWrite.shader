@@ -41,6 +41,8 @@ Shader "LUTBeam/CRT"
             #undef _SelfTexture2D
 
             Texture2D<float4> _SelfTexture2D;
+            float _ZoomX;
+            float _ZoomY;
 
             float4 frag(v2f_customrendertexture i) : SV_Target
             {
@@ -59,7 +61,7 @@ Shader "LUTBeam/CRT"
                 if(px.y == 0) return float4(0.0, 0.0, 0.0, 1.0);
                 if(px.y == 1) return float4(0.0, 0.0, 1.0, 1.0);
                 if(px.y == 2) return float4(0.0, 1.0, 0.0, 1.0);
-                if(px.y == 3) return float4(0.1, 0.1, 0.5, 0.5);
+                if(px.y == 3) return float4(_ZoomX, _ZoomY, 0.5, 0.5);
                 if(px.y == 4) return float4(1.0, 0.5, 1.0, 100);
                 if(px.y == 5) return float4(2.0, 0.0, 0.0, 0.0);
                 else return float4(1.0, 0.0, 1.0, 1.0);
