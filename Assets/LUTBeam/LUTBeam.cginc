@@ -231,7 +231,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float maxGobo = max(max(beam.colorGobo.r, beam.colorGobo.g), beam.colorGobo.b) * 0.05;
     float C = max(maxVolume, maxGobo);
 
-    // Binary search to find where the fade function intersects 0.5 brightness, then move the frustum back to that point.
+    // Binary search to find where the fade function intersects 1/255 brightness, then move the frustum back to that point.
     float eps = 0.5 / 255.0;
     float logCE = log2(max(C, 1e-20) / eps);
 
@@ -247,6 +247,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         else
             hi = mid;
     }
+
     float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
     float t = vertexPos.z+0.5;
     beam.vertex = vertexPos;
@@ -435,15 +436,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
 
     return beam;
- }
-
-float Bayer2(float2 a)
-{
-    a = floor(a);
-    return frac(a.x * 0.5 + a.y * a.y * 0.75);
 }
-float Bayer4(float2 a) { return Bayer2(0.5 * a) * 0.25 + Bayer2(a); }
-float Bayer8(float2 a) { return Bayer4(0.5 * a) * 0.25 + Bayer2(a); }
 
 float CalculateMip(float t, float focus, float frost, float aperture)
 {
@@ -458,7 +451,6 @@ float CalculateMip(float t, float focus, float frost, float aperture)
 
     return saturate(blur * aperture + frost);
 }
-
 
 float3 MagicSample(float2 start, float2 end, float blur, NESTED_STRUCT_TYPE nestedStruct)
 {
