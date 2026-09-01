@@ -95,7 +95,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
 		            float4 result = 0;
                     if(_MipLevel == 0)
                     {
-                        result = SampleGobo(scaledUV(input.uv)) * (distance(scaledUV(input.uv), 0.5) < 0.5);
+                        result = SampleGobo(scaledUV(input.uv));// * (distance(scaledUV(input.uv), 0.5) < 0.5);
                     }
                     else
                     {

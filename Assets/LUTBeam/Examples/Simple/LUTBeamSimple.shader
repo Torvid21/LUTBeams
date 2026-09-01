@@ -126,7 +126,7 @@ Shader "LUTBeam/Simple"
             #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
             float3 LUTBeamCallbackTransform(float3 vertex)
             {
-                return vertex + float3(0,0,_Offset);
+                return vertex + float3(0, 0, _Offset);
             }
 
 
