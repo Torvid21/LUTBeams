@@ -363,13 +363,12 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         
         useQuad = false;
 
-        float dCurrent = dot(mirrorPlane.xyz, worldPos) + mirrorPlane.w - 0.001;
-        float dStart   = dot(mirrorPlane.xyz, apex) + mirrorPlane.w - 0.001;
+        float dCurrent = dot(mirrorPlane.xyz, worldPos) + mirrorPlane.w-0.001;
+        float dStart   = dot(mirrorPlane.xyz, apex) + mirrorPlane.w-0.001;
         if (dCurrent <= 0.0)
         {
             float denom = dCurrent - dStart;
-            float t = (abs(denom) > 1e-6) ? dCurrent / denom : 1.0;
-            t = saturate(t);
+            float t = (dCurrent / denom);
 
             worldPos = lerp(worldPos, apex, t);
 
@@ -718,7 +717,7 @@ float3 LUTBeamFrag(BeamData beam)
                 grab = 1;
             #endif
 
-            col += grab.rgb * goboResult;
+            col += grab.rgb * goboResult; //  * saturate(-rayDir.z)
         }
     }
     return float4(col, 1);
