@@ -37,8 +37,8 @@ Material:
     - _NearSizeX: 0.1
     - _NearSizeY: 0.1
     - _Offset: 0.25
-    - _ZoomX: 12.9
-    - _ZoomY: 15.1
+    - _ZoomX: 28.7
+    - _ZoomY: 17.5
     m_Colors:
     - _Color: {r: 1, g: 0.16944128, b: 0, a: 1}
   m_BuildTextureStacks: []

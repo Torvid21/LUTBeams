@@ -204,36 +204,13 @@ GameObject:
   - component: {fileID: 1249084}
   - component: {fileID: 1249083}
   - component: {fileID: 1249082}
-  - component: {fileID: 1249081}
   m_Layer: 0
-  m_Name: Quad
+  m_Name: DeferredTest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 0
---- !u!64 &1249081
-MeshCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1249080}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 5
-  m_Convex: 0
-  m_CookingOptions: 30
-  m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!23 &1249082
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -15491,7 +15468,7 @@ Transform:
   m_GameObject: {fileID: 471681694}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.692, y: 1.364, z: 0.343}
+  m_LocalPosition: {x: 6.15, y: 1.364, z: 4.83}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -22906,7 +22883,7 @@ PrefabInstance:
     - target: {fileID: 6394685341477385374, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
       propertyPath: m_LocalPosition.x
-      value: -3.193
+      value: -3.21
       objectReference: {fileID: 0}
     - target: {fileID: 6394685341477385374, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
@@ -22916,7 +22893,7 @@ PrefabInstance:
     - target: {fileID: 6394685341477385374, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
       propertyPath: m_LocalPosition.z
-      value: 2.996
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 6394685341477385374, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
@@ -33267,21 +33244,6 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
         type: 3}
-      propertyPath: m_LocalScale.x
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
-        type: 3}
-      propertyPath: m_LocalScale.y
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
-        type: 3}
-      propertyPath: m_LocalScale.z
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 265491568901008614, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
-        type: 3}
       propertyPath: m_LocalPosition.x
       value: 7.32
       objectReference: {fileID: 0}
@@ -33335,12 +33297,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: LUTBeamAvatar
       objectReference: {fileID: 0}
-    - target: {fileID: 6831043028752891271, guid: e7bc8988dda714f4e9ab12d9c83b0cff,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 5660142125939120931, guid: 10c429b1299cd6e4ca04d015c84ea91a,
-        type: 3}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -33581,7 +33537,7 @@ Transform:
   m_GameObject: {fileID: 1172233409}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -2.692, y: 0.8410977, z: 0.34300005}
+  m_LocalPosition: {x: 6.15, y: 0.8410977, z: 4.83}
   m_LocalScale: {x: 1, y: 0.045805, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -61372,21 +61328,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3230380903974476193, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
-        type: 3}
-      propertyPath: m_Mesh
-      value: 
-      objectReference: {fileID: 5660142125939120931, guid: 10c429b1299cd6e4ca04d015c84ea91a,
-        type: 3}
     - target: {fileID: 5147006435767148052, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
       propertyPath: m_Name
       value: LUTBeam (107)
-      objectReference: {fileID: 0}
-    - target: {fileID: 5147006435767148052, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
-        type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6394685341477385374, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
@@ -61438,12 +61383,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: -104.555
       objectReference: {fileID: 0}
-    - target: {fileID: 7453576320433148262, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
-        type: 3}
-      propertyPath: serializedProgramAsset
-      value: 
-      objectReference: {fileID: 11400000, guid: 80f72f380e3fcc845ac1774d1d9891bd,
-        type: 2}
     - target: {fileID: 8757895413590626939, guid: 4fa6b9fdd6f61594fb9c10d34fe9a691,
         type: 3}
       propertyPath: serializationData.Prefab
@@ -64838,8 +64777,7 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 5660142125939120931, guid: 10c429b1299cd6e4ca04d015c84ea91a,
-        type: 3}
+      objectReference: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
     - target: {fileID: 5293033548665060776, guid: dfa476b6a34da184faafeb82d0b5e733,
         type: 3}
       propertyPath: serializationData.Prefab

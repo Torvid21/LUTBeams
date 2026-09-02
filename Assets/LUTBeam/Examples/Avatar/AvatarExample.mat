@@ -32,7 +32,7 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _Gobo: 0
+    - _Gobo: 6
     m_Floats:
     - _BeamFalloff: 1.33
     - _BeamIntensity: 2.56

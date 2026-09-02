@@ -18,7 +18,7 @@ struct dummy_struct {};
 //#pragma multi_compile _ LUTBEAM_FRAMING
 //#pragma multi_compile _ LUTBEAM_FOCUS
 
-#define LUTBEAM_OCTAGON 1
+#define LUTBEAM_OCTAGON 0
 
 struct BeamSettings
 {
