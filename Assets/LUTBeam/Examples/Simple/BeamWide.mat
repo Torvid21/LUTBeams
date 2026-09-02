@@ -7,13 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Beam2
+  m_Name: BeamWide
   m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords:
-  - LUTBEAM_FOCUS
+  m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -37,15 +36,15 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Ints:
-    - _Gobo: 4
+    - _Gobo: 0
     m_Floats:
     - _: 1
-    - _Angle: 0.341
+    - _Angle: 0.012
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 1
-    - _BeamHotness: 0
-    - _BeamIntensity: 4.31
+    - _BeamFalloff: 3
+    - _BeamHotness: 1
+    - _BeamIntensity: 0.19
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -57,30 +56,19 @@ Material:
     - _FadeMult: 1
     - _FailOp: 0
     - _Falloff: 0
-    - _FarZ: 25
+    - _FarZ: 100
     - _FarZMaxZoom: 10
-    - _Focus: 0.507
-    - _FocusEnabled: 1
-    - _Focus_ApertureSize: 1
-    - _Framing0A: 0
-    - _Framing0B: 0
-    - _Framing1A: 0
-    - _Framing1B: 0
-    - _Framing2A: 0
-    - _Framing2B: 0
-    - _Framing3A: 0
-    - _Framing3B: 0
-    - _FramingAngle: 0
-    - _FramingEnabled: 0
-    - _Frost: 0
-    - _Gobo: 3
+    - _Focus: 0
+    - _Gobo: -10.73
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 3.5
+    - _GoboIntensity: 1
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.187
-    - _NearSizeX: 1
-    - _NearSizeY: 1
+    - _NearRadius: 0.066
+    - _NearRadiusX: 1
+    - _NearRadiusY: 0.1
+    - _NearSizeX: 2
+    - _NearSizeY: 0.1
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
@@ -97,18 +85,17 @@ Material:
     - _StencilRef: 142
     - _StencilWriteMask: 255
     - _StencilZFailOp: 0
-    - _Test: 1
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
     - _WriteMask: 255
     - _ZFailOp: 0
-    - _Zoom: 0.291
-    - _ZoomX: 0
+    - _Zoom: 0.07
+    - _ZoomX: 22.3
     - _ZoomY: 0
     m_Colors:
-    - _Color: {r: 0.34117648, g: 0.59607846, b: 1, a: 1}
+    - _Color: {r: 0.34299523, g: 0.5942029, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

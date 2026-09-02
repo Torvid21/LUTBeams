@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Beam2
+  m_Name: BlendBeam2
   m_Shader: {fileID: 4800000, guid: da8333e2df4354542a4fa05f5f8b1185, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
@@ -43,9 +43,9 @@ Material:
     - _Angle: 0.341
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _BeamFalloff: 1
+    - _BeamFalloff: 3.27
     - _BeamHotness: 0
-    - _BeamIntensity: 4.31
+    - _BeamIntensity: 4.08
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
@@ -73,14 +73,14 @@ Material:
     - _FramingAngle: 0
     - _FramingEnabled: 0
     - _Frost: 0
-    - _Gobo: 3
+    - _Gobo: 1
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 3.5
+    - _GoboIntensity: 6.09
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
-    - _NearSizeX: 1
-    - _NearSizeY: 1
+    - _NearSizeX: 0.1
+    - _NearSizeY: 0.1
     - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
@@ -105,10 +105,10 @@ Material:
     - _WriteMask: 255
     - _ZFailOp: 0
     - _Zoom: 0.291
-    - _ZoomX: 0
-    - _ZoomY: 0
+    - _ZoomX: 30
+    - _ZoomY: 30
     m_Colors:
-    - _Color: {r: 0.34117648, g: 0.59607846, b: 1, a: 1}
+    - _Color: {r: 0, g: 0, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
