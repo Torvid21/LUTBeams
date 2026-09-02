@@ -100,18 +100,18 @@ Shader "LUTBeam/Simple"
             float _GoboIntensity;
             float _BeamIntensity;
             float _BeamFalloff;
-            float _Focus;
-            float _Focus_ApertureSize;
-            float _Frost;
-            float _Framing0A;
-            float _Framing0B;
-            float _Framing1A;
-            float _Framing1B;
-            float _Framing2A;
-            float _Framing2B;
-            float _Framing3A;
-            float _Framing3B;
-            float _FramingAngle;
+            //float _Focus;
+            //float _Focus_ApertureSize;
+            //float _Frost;
+            //float _Framing0A;
+            //float _Framing0B;
+            //float _Framing1A;
+            //float _Framing1B;
+            //float _Framing2A;
+            //float _Framing2B;
+            //float _Framing3A;
+            //float _Framing3B;
+            //float _FramingAngle;
 
             #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
             float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)

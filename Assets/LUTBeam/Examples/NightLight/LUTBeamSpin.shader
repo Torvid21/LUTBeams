@@ -97,9 +97,10 @@ Shader "LUTBeam/Spin"
                     0,         0,          1
                 );
 
+                vertex.z += _Offset;
+
                 return mul(spinMatrix3, vertex);
             }
-
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -135,7 +136,6 @@ Shader "LUTBeam/Spin"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSize;
                 settings.nearSizeY = _NearSize;
-                //settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;

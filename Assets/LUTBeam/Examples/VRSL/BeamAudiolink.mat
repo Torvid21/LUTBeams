@@ -7,12 +7,16 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: VideoBeam
-  m_Shader: {fileID: 4800000, guid: 37de28452139eb6429b56657cd2ea56e, type: 3}
+  m_Name: BeamAudiolink
+  m_Shader: {fileID: 4800000, guid: 03d1bdc62468c0847a82e521407f069c, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords: []
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _BAND_LOW
+  - _ENABLEAUDIOLINK_ON
+  - _ENABLETHEMECOLORSAMPLING_ON
+  - _THEMECOLORTARGET_THEME1
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 1
   m_DoubleSidedGI: 0
@@ -24,11 +28,11 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _GoboLUT:
-        m_Texture: {fileID: 8600000, guid: 06736e881b4e84e4ebb129960ac34820, type: 2}
+        m_Texture: {fileID: 18700000, guid: d7b0aa7faf19c524a9b8555556705094, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _GoboTex:
-        m_Texture: {fileID: 8400000, guid: cfc61c18ad0951044ace4272ebf15435, type: 2}
+        m_Texture: {fileID: 18700000, guid: 56dc3461f5bb5524ba605eb0a6c077a1, type: 2}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _Shadows:
@@ -39,41 +43,48 @@ Material:
     - _Gobo: 0
     m_Floats:
     - _: 1
-    - _Angle: 0.341
+    - _Angle: 0.012
     - _AngleMax: 0.3
     - _AngleMin: 0.1
-    - _AngleX: 0.528
-    - _AngleY: 0.301
-    - _AspectRatio: 1
+    - _Band: 0
     - _BeamFalloff: 3
     - _BeamHotness: 1
-    - _BeamIntensity: 0.1
+    - _BeamIntensity: 0.19
     - _BrightnessGoboZoomMax: 1
     - _BrightnessGoboZoomMin: 1
     - _BrightnessVolumeZoomMax: 1
     - _BrightnessVolumeZoomMin: 1
+    - _CompareFunction: 8
     - _DMXChannel: -1
     - _DMXMotionChannel: -1
+    - _Delay: 0
+    - _EnableAudioLink: 1
+    - _EnableThemeColorSampling: 1
     - _FadeDist: 1
     - _FadeMult: 1
+    - _FailOp: 0
     - _Falloff: 0
-    - _FarZ: 50.35
+    - _FarZ: 100
     - _FarZMaxZoom: 10
-    - _Gobo: 2.15
-    - _GoboColorEnabled: 1
-    - _GoboIntensity: 0.25
-    - _Hotness: 1.94
+    - _Focus: 0
+    - _Gobo: -10.73
+    - _GoboColorEnabled: 0
+    - _GoboIntensity: 1
+    - _Hotness: 1
     - _LUTBeamShadowIndex: 0
-    - _NearRadius: 0.038
-    - _NearRadiusX: 0.1
-    - _NearRadiusY: 0.05625
-    - _NearSizeX: 0.059
-    - _NearSizeY: 0.066
-    - _Offset: 0.23
+    - _NearRadius: 0.066
+    - _NearRadiusX: 1
+    - _NearRadiusY: 0.1
+    - _NearSizeX: 0.48
+    - _NearSizeY: 0.1
+    - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90
     - _PanOffset: 0
+    - _PassOp: 0
+    - _ReadMask: 255
+    - _Ref: 0
     - _SpinMult: 4
     - _StencilCompareFunction: 6
     - _StencilFailOp: 0
@@ -82,15 +93,19 @@ Material:
     - _StencilRef: 142
     - _StencilWriteMask: 255
     - _StencilZFailOp: 0
+    - _ThemeColorTarget: 1
     - _Tilt: 0
     - _TiltMax: 90
     - _TiltMin: -90
     - _TiltOffset: 0
-    - _Zoom: 0.28
-    - _ZoomX: 76.8
-    - _ZoomY: 49.2
+    - _WriteMask: 255
+    - _ZFailOp: 0
+    - _Zoom: 0.07
+    - _ZoomX: 22.3
+    - _ZoomY: 0
     m_Colors:
-    - _Color: {r: 1, g: 1, b: 1, a: 1}
+    - _Color: {r: 0.34299523, g: 0.5942029, b: 1, a: 1}
+    - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
     - _MotionScale: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []

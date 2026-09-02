@@ -8,7 +8,6 @@ Shader "LUTBeam/Avatar"
         [Header(Shape)]
         _Zoom ("_Zoom", Range(0, 120.0)) = 20
         _NearSize ("_NearSize", Range(0,1)) = 0.1
-        _Offset ("_Offset", Range(-1,1)) = 0.25
         _FarZ ("_FarZ", Float) = 25
         _Gobo ("Gobo Index", Integer) = 0
             
@@ -102,7 +101,6 @@ Shader "LUTBeam/Avatar"
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSize;
                 settings.nearSizeY = _NearSize;
-                //settings.offset = _Offset;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;

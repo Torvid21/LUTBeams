@@ -8,7 +8,7 @@ Shader "LUTBeam/Video"
         [Header(Shape)]
         _ZoomX ("_ZoomX", Range(0, 120.0)) = 45
         _ZoomY ("_ZoomY", Range(0, 120.0)) = 30
-        _Offset ("_Offset", Range(-1,1)) = 0.25
+        _Offset ("_Offset", Range(-1,1)) = 0.0
         _NearSizeX ("_NearSizeX", Range(0,1)) = 0.1
         _NearSizeY ("_NearSizeY", Range(0,1)) = 0.1
         _FarZ ("_FarZ", Float) = 25
@@ -84,6 +84,12 @@ Shader "LUTBeam/Video"
             {
                 return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rgb;
             }
+            #define LUTBEAM_CALLBACK_VERTEX LUTBeamCallbackTransform
+            float3 LUTBeamCallbackTransform(float3 vertex)
+            {
+                return vertex + float3(0, 0, _Offset);
+            }
+
             #include "Assets/LUTBeam/LUTBeam.cginc"
         
             #pragma vertex vert
@@ -114,11 +120,10 @@ Shader "LUTBeam/Video"
 
                 BeamSettings settings = DefaultBeamSettings();
                 settings.zoomX = _ZoomX;
-                settings.zoomY = _ZoomX;
+                settings.zoomY = _ZoomY;
                 settings.farz = _FarZ;
                 settings.nearSizeX = _NearSizeX;
-                settings.nearSizeY = _NearSizeX;
-                //settings.offset = _Offset;
+                settings.nearSizeY = _NearSizeY;
                 settings.color = _Color;
                 settings.brightnessVolume = _BeamIntensity;
                 settings.brightnessGobo = _GoboIntensity;
