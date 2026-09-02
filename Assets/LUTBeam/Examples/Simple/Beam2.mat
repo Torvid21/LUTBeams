@@ -73,15 +73,15 @@ Material:
     - _FramingAngle: 0
     - _FramingEnabled: 0
     - _Frost: 0
-    - _Gobo: 1
+    - _Gobo: 2
     - _GoboColorEnabled: 0
     - _GoboIntensity: 3.5
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.187
-    - _NearSizeX: 1.38
+    - _NearSizeX: 0.67
     - _NearSizeY: 0.67
-    - _Offset: -1
+    - _Offset: 0
     - _Pan: 0
     - _PanMax: 90
     - _PanMin: -90

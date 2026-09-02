@@ -60,15 +60,15 @@ Material:
     - _Frost: 0
     - _Gobo: 6.71
     - _GoboColorEnabled: 0
-    - _GoboIntensity: 0
+    - _GoboIntensity: 4.94
     - _Hotness: 1
     - _LUTBeamShadowIndex: 0
     - _NearRadius: 0.144
     - _NearRadiusX: 0.1
     - _NearRadiusY: 0.1
     - _NearSize: 0.1
-    - _NearSizeX: 0.408
-    - _NearSizeY: 1.842
+    - _NearSizeX: 0.25
+    - _NearSizeY: 0.25
     - _Offset: 0.212
     - _Pan: 0
     - _PanMax: 90
@@ -88,8 +88,8 @@ Material:
     - _TiltMin: -90
     - _TiltOffset: 0
     - _Zoom: 55
-    - _ZoomX: 30.3
-    - _ZoomY: 21
+    - _ZoomX: 50
+    - _ZoomY: 50
     m_Colors:
     - _Color: {r: 1, g: 0.5019608, b: 0.5019608, a: 1}
     - _MotionOffset: {r: 1, g: 1, b: 1, a: 1}
