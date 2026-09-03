@@ -278,9 +278,9 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
         frustumOffsetVector = LUTBEAM_CALLBACK_VERTEX(frustumOffsetVector) - corrected_pos;
     #endif
     
-    forward = normalize(mul(ObjectToWorld_NoScale(), float4(forward, 0)).xyz);
     right   = normalize(mul(ObjectToWorld_NoScale(), float4(right, 0)).xyz);
     up      = normalize(mul(ObjectToWorld_NoScale(), float4(up, 0)).xyz);
+    forward = normalize(mul(ObjectToWorld_NoScale(), float4(forward, 0)).xyz);
     
     float3 worldPos = mul(ObjectToWorld_NoScale(), beam.vertex);
     beam.vertex = mul(UNITY_MATRIX_VP, float4(worldPos, 1));
@@ -407,14 +407,14 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.frustumCorrection /= beam.vertex.w;
     beam.screenPosition /= beam.vertex.w;
 
-    float4 leftPlane   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
-    float4 rightPlane  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
-    float4 bottomPlane = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
-    float4 topPlane    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
-    float4 nearPlane   = float4(float3( 0,  0,  1), -beam.frustumNearZ);
-    float4 farPlane    = float4(float3( 0,  0, -1),  beam.frustumFarZ);
+    float4 planeLeft   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+    float4 planeRight  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+    float4 planeBottom = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+    float4 planeTop    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+    float4 planeNear   = float4(float3( 0,  0,  1), -beam.frustumNearZ);
+    float4 planeFar    = float4(float3( 0,  0, -1),  beam.frustumFarZ);
     
-    float4 planes[7] = { leftPlane, rightPlane, bottomPlane, topPlane, nearPlane, farPlane, beam.clipPlane };
+    float4 planes[7] = { planeLeft, planeRight, planeBottom, planeTop, planeNear, planeFar, beam.clipPlane };
     
     float angle = settings.framingAngle;
     float tau = 3.1415926536897 * 2;
@@ -534,19 +534,19 @@ float3 LUTBeamFrag(BeamData beam)
     if(!DepthExists())
         SceneDistance = 9999999;
 
-    float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
-    float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
-    float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
-    float4 topPlane    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
-    float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
-    float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
+    float4 planeLeft   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
+    float4 planeRight  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
+    float4 planeBottom = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
+    float4 planeTop    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
+    float4 planeNear   = float4(float3(0, 0,  1), -beam.frustumNearZ);
+    float4 planeFar    = float4(float3(0, 0, -1),  beam.frustumFarZ);
     
-    float4 planes[5] = { leftPlane, rightPlane, bottomPlane, topPlane, beam.clipPlane };
+    float4 planes[5] = { planeLeft, planeRight, planeBottom, planeTop, beam.clipPlane };
 
     // Near plane and far plane are parallel, so we can do the angle math just once for them :>
     float invDz = rcp(rayDir.z);
-    float t4 =  (nearPlane.w - dot(nearPlane.xyz, beam.rayOrigin)) * invDz;
-    float t5 = -(farPlane.w - dot(farPlane.xyz, beam.rayOrigin)) * invDz;
+    float t4 =  (planeNear.w - dot(planeNear.xyz, beam.rayOrigin)) * invDz;
+    float t5 = -(planeFar.w - dot(planeFar.xyz, beam.rayOrigin)) * invDz;
     float tMin = min(t4, t5);
     float tMax = max(t4, t5);
 

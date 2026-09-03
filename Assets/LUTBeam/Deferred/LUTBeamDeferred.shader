@@ -77,15 +77,6 @@ Shader "LUTBeam/Deferred"
             float _Framing3B;
             float _FramingAngle;
             float _Test;
-            #define LUTBEAM_CALLBACK_PROJECTION LUTBeamCallbackProjection
-            float3 LUTBeamCallbackProjection(SamplerState samp, float2 uv, float mip)
-            {
-            }
-            #define LUTBEAM_CALLBACK_VOLUME LUTBeamCallbackVolume
-            float3 LUTBeamCallbackVolume(SamplerState samp, float2 uv, float mip)
-            {
-                return _GoboLUT.SampleLevel(samp, float3(uv, _Gobo), mip).rrr;
-            }
 
             // I dedicate this work to the public domain. Do as you will.
             // Initial implementation by Torvid
@@ -161,7 +152,6 @@ Shader "LUTBeam/Deferred"
                 
                 noperspective float DepthFadeData : TEXCOORD56;
                 nointerpolation float3 counter : TEXCOORD20;
-                nointerpolation int4 mask : TEXCOORD21;
 
             #if LUTBEAM_FOCUS
                 nointerpolation float focus : TEXCOORD57;
@@ -230,7 +220,7 @@ Shader "LUTBeam/Deferred"
                 else return float2(0.0, 4.0 - ft);
             }
 
-            float3 WorldToFrustumVector(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+            float3 WorldToFrustumVector(float3 a, float3 right, float3 up, float3 forward, float3 apex)
             {
                 float3 result = 0;
                 result.x = dot(a, right);
@@ -239,7 +229,7 @@ Shader "LUTBeam/Deferred"
                 return result;
             }
 
-            float3 WorldToFrustumPosition(float3 apex, float3 forward, float3 right, float3 up, float3 a)
+            float3 WorldToFrustumPosition(float3 a, float3 right, float3 up, float3 forward, float3 apex)
             {
                 float3 result = 0;
                 result.x = dot(a-apex, right);
@@ -345,6 +335,7 @@ Shader "LUTBeam/Deferred"
             struct v2f
             {
                 BeamData beam;
+                nointerpolation uint4 mask : TEXCOORD21;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID
                 UNITY_VERTEX_OUTPUT_STEREO
@@ -425,27 +416,15 @@ Shader "LUTBeam/Deferred"
                 return -(a.w * bc + b.w * ca + c.w * ab) / dot(a.xyz, bc);
             }
 
-            void frustum_corners(float4 L, float4 R, float4 B, float4 T,
-                                 float4 N, float4 F, out float3 c[8])
+            void frustum_corners(float4 p[6], out float3 c[8])
             {
                 [loop]
                 for (int i = 0; i < 8; i++)
                 {
-                    c[i] = plane_intersect3((i & 1) ? R : L,
-                                            (i & 2) ? T : B,
-                                            (i & 4) ? F : N);
+                    c[i] = plane_intersect3((i & 1) ? p[1] : p[0],
+                                            (i & 2) ? p[3] : p[2],
+                                            (i & 4) ? p[5] : p[4]);
                 }
-            }
-
-            bool all_outside(float4 p, float3 c[8])
-            {
-                [loop]
-                for (int i = 0; i < 8; i++)
-                {
-                    if (dot(p.xyz, c[i]) + p.w >= 0.0)
-                        return false;
-                }
-                return true;
             }
 
             bool separated_on_axis(float3 axis, float3 a[8], float3 b[8])
@@ -461,31 +440,36 @@ Shader "LUTBeam/Deferred"
                 return (aMax < bMin) || (bMax < aMin);
             }
 
-            bool frustum_overlap(float4 plane0Left, float4 plane0Right, float4 plane0Bottom,
-                                 float4 plane0Top,  float4 plane0Near,  float4 plane0Far,
-                                 float4 plane1Left, float4 plane1Right, float4 plane1Bottom,
-                                 float4 plane1Top,  float4 plane1Near,  float4 plane1Far)
+            bool frustum_overlap(float4 p0[6], float4 p1[6])
             {
                 float3 c0[8];
                 float3 c1[8];
-                frustum_corners(plane0Left, plane0Right, plane0Bottom,
-                                plane0Top,  plane0Near,  plane0Far,  c0);
-                frustum_corners(plane1Left, plane1Right, plane1Bottom,
-                                plane1Top,  plane1Near,  plane1Far,  c1);
+                frustum_corners(p0,  c0);
+                frustum_corners(p1,  c1);
+                bool hit = true;
 
-                if (all_outside(plane0Left,   c1)) return false;
-                if (all_outside(plane0Right,  c1)) return false;
-                if (all_outside(plane0Bottom, c1)) return false;
-                if (all_outside(plane0Top,    c1)) return false;
-                if (all_outside(plane0Near,   c1)) return false;
-                if (all_outside(plane0Far,    c1)) return false;
+                // 12 face tests -> 2 loop bodies instead of 12 inlined calls
+                [loop]
+                for (int f = 0; f < 6 && hit; f++)
+                {
+                    float4 pl = p0[f];
+                    bool allOut = true;
+                    [loop]
+                    for (int i = 0; i < 8; i++)
+                        if (dot(pl.xyz, c1[i]) + pl.w >= 0.0) { allOut = false; break; }
+                    if (allOut) hit = false;
+                }
 
-                if (all_outside(plane1Left,   c0)) return false;
-                if (all_outside(plane1Right,  c0)) return false;
-                if (all_outside(plane1Bottom, c0)) return false;
-                if (all_outside(plane1Top,    c0)) return false;
-                if (all_outside(plane1Near,   c0)) return false;
-                if (all_outside(plane1Far,    c0)) return false;
+                [loop]
+                for (int g = 0; g < 6 && hit; g++)
+                {
+                    float4 pl = p1[g];
+                    bool allOut = true;
+                    [loop]
+                    for (int i = 0; i < 8; i++)
+                        if (dot(pl.xyz, c0[i]) + pl.w >= 0.0) { allOut = false; break; }
+                    if (allOut) hit = false;
+                }
 
                 #if 1
                     float3 e0[6], e1[6];
@@ -529,8 +513,11 @@ Shader "LUTBeam/Deferred"
                 float4 vertexPos = v.vertex;
                 
                 BeamData beam = (BeamData)0;
+
+                uint mask[4] = {0, 0, 0, 0};
+
                 [loop]
-                for (int q = 0; q < 128; q++)
+                for (int q = 0; q < 16; q++)
                 {
                     float4 Line0 = _DataTexture.Load(int3(q, 0, 0));
                     float4 Line1 = _DataTexture.Load(int3(q, 1, 0));
@@ -554,23 +541,24 @@ Shader "LUTBeam/Deferred"
                     //    return o;
                     //}
 
-
                     BeamSettings settings = DefaultBeamSettings();
-                    settings.worldPos = Line0.xyz;
-                    settings.up = Line1.xyz;
-                    settings.forward = Line2.xyz;
-                    settings.right = cross(Line1.xyz, Line2.xyz);
-                    settings.zoomX = Line3.x;
-                    settings.zoomY = Line3.y;
-                    settings.farz = Line4.w;
-                    settings.gobo = Line5.r;
-                    settings.nearSizeX = Line3.z;
-                    settings.nearSizeY = Line3.w;
-                    //settings.offset = _Offset;
+                    settings.worldPos   = Line0.xyz;
+                    settings.up         = Line1.xyz;
+                    settings.forward    = Line2.xyz;
+                    settings.right      = cross(Line1.xyz, Line2.xyz);
+                    settings.zoomX      = Line3.x;
+                    settings.zoomY      = Line3.y;
+                    settings.farz       = Line4.w;
+                    settings.gobo       = Line5.r;
+                    settings.nearSizeX  = Line3.z;
+                    settings.nearSizeY  = Line3.w;
                     settings.color = Line4.rgb;
                     settings.brightnessVolume = Line0.w;
                     settings.brightnessGobo = Line2.w;
                     settings.beamFalloff = Line1.w;
+
+                    if(settings.color.r <= 0)
+                        continue;
 
                     float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
                     float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
@@ -580,21 +568,6 @@ Shader "LUTBeam/Deferred"
                     beam.zoomX = tan(radians(max(settings.zoomX/2, 1)));
                     beam.zoomY = tan(radians(max(settings.zoomY/2, 1)));
     
-                #if LUTBEAM_FOCUS
-                    beam.focus = settings.focus;
-                    beam.frost = settings.frost;
-                    float FocusZoomExtra = beam.focus*0.05 * settings.focus_apertureSize;
-                    beam.zoomX += FocusZoomExtra;
-                    beam.zoomY += FocusZoomExtra;
-                    beam.focus_apertureSize = settings.focus_apertureSize;
-                #endif
-
-                    //if ((!any(settings.color)) || (settings.brightnessVolume <= 0 && settings.brightnessGobo <= 0))
-                    //{
-                    //    beam.vertex = asfloat(-1);
-                    //    return beam;
-                    //}
-
                     beam.falloff = settings.beamFalloff;
                     beam.zoomX = max(beam.zoomX, 0.0001);
                     beam.zoomY = max(beam.zoomY, 0.0001);
@@ -623,32 +596,27 @@ Shader "LUTBeam/Deferred"
                     float C = max(maxVolume, maxGobo);
 
                     // Binary search to find where the fade function intersects 0.5 brightness, then move the frustum back to that point.
-                    float eps = 0.5 / 255.0;
-                    float logCE = log2(max(C, 1e-20) / eps);
+                    //float eps = 0.5 / 255.0;
+                    //float logCE = log2(max(C, 1e-20) / eps);
+                    //
+                    //float lo = 0.0;
+                    //float hi = 0.999;
+                    //[loop]
+                    //for (int i = 0; i < 12; i++)
+                    //{
+                    //    float mid = 0.5 * (lo + hi);
+                    //    float L = C * (1.0 - mid) * (1.0 - mid) * pow(mid + 0.01, -p);
+                    //    if (L > eps)
+                    //        lo = mid;
+                    //    else
+                    //        hi = mid;
+                    //}
+                    //float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
+                    //float t = vertexPos.z+0.5;
 
-                    float lo = 0.0;
-                    float hi = 0.999;
-                    [loop]
-                    for (int i = 0; i < 12; i++)
-                    {
-                        float mid = 0.5 * (lo + hi);
-                        float L = C * (1.0 - mid) * (1.0 - mid) * pow(mid + 0.01, -p);
-                        if (L > eps)
-                            lo = mid;
-                        else
-                            hi = mid;
-                    }
-                    float farClipValue = lerp(frustumNearZ, frustumFarZ, lo) / frustumFarZ;
-                    float t = vertexPos.z+0.5;
-                    //beam.vertex = vertexPos;
-                    //beam.vertex.z = lerp(0, frustumFarZ, t*farClipValue);
-                    //beam.vertex.x *= (beam.vertex.z - apexZX) * beam.zoomX * 2;
-                    //beam.vertex.y *= (beam.vertex.z - apexZY) * beam.zoomY * 2;
-                    //beam.vertex.z += frustumOffset;
-
-                    float3 right    = float3(1, 0, 0);
-                    float3 up       = float3(0, 1, 0);
-                    float3 forward  = float3(0, 0, -1);
+                    float3 right   = settings.right;
+                    float3 up      = settings.up;
+                    float3 forward = settings.forward;
     
                     float3 corrected_pos = 0;
                     float3 frustumOffsetVector = float3(0, 0, frustumOffset);
@@ -657,30 +625,30 @@ Shader "LUTBeam/Deferred"
 
                     //beam.screenPosition = ComputeScreenPos(beam.vertex).xy;
 
-                    float3 apex = (corrected_pos + frustumOffsetVector).xyz;
-    
-                    beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
+                    float3 apex = settings.worldPos;// (corrected_pos + frustumOffsetVector).xyz;
                     beam.frustumNearZ  = frustumNearZ;
                     beam.frustumFarZ   = frustumFarZ;
+    
+                    beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
 
                     float3 objectPos = 0;
 
                     //beam.rayOrigin = WorldToFrustumPosition(apex, forward, right, up, rayOrigin);
                     //float3 worldPosLocal = WorldToFrustumPosition(apex, forward, right, up, worldPos.xyz);
                 
-                    float4 plane0Left   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
-                    float4 plane0Right  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
-                    float4 plane0Bottom = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
-                    float4 plane0Top    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
-                    float4 plane0Near   = float4(float3(0, 0, 1), -beam.frustumNearZ);
-                    float4 plane0Far    = float4(float3(0, 0, -1), beam.frustumFarZ);
+                    //float4 plane0Left   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+                    //float4 plane0Right  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+                    //float4 plane0Bottom = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+                    //float4 plane0Top    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+                    //float4 plane0Near   = float4(float3(0, 0, 1), -beam.frustumNearZ);
+                    //float4 plane0Far    = float4(float3(0, 0, -1), beam.frustumFarZ);
 
-                    plane0Left   = PlaneToWorld(plane0Left   , right, up, forward, apex);
-                    plane0Right  = PlaneToWorld(plane0Right  , right, up, forward, apex);
-                    plane0Bottom = PlaneToWorld(plane0Bottom , right, up, forward, apex);
-                    plane0Top    = PlaneToWorld(plane0Top    , right, up, forward, apex);
-                    plane0Near   = PlaneToWorld(plane0Near   , right, up, forward, apex);
-                    plane0Far    = PlaneToWorld(plane0Far    , right, up, forward, apex);
+                    //plane0Left   = PlaneToWorld(plane0Left   , right, up, forward, apex);
+                    //plane0Right  = PlaneToWorld(plane0Right  , right, up, forward, apex);
+                    //plane0Bottom = PlaneToWorld(plane0Bottom , right, up, forward, apex);
+                    //plane0Top    = PlaneToWorld(plane0Top    , right, up, forward, apex);
+                    //plane0Near   = PlaneToWorld(plane0Near   , right, up, forward, apex);
+                    //plane0Far    = PlaneToWorld(plane0Far    , right, up, forward, apex);
 
                     float2 tileMax = -(v.uv * 2 - 1);
                     float2 tileMin = tileMax;
@@ -705,35 +673,37 @@ Shader "LUTBeam/Deferred"
                     //    float4 plane1Near = R2 + R3;
                     //    float4 plane1Far  = R3 - R2;
                     //#endif
+                    float4 p0[6];
+                    p0[0] = PlaneToWorld(float4( 1, 0, beam.zoomX, beam.aniso.z), right, up, forward, apex);
+                    p0[1] = PlaneToWorld(float4(-1, 0, beam.zoomX, beam.aniso.z), right, up, forward, apex);
+                    p0[2] = PlaneToWorld(float4( 0,-1, beam.zoomY, beam.aniso.w), right, up, forward, apex);
+                    p0[3] = PlaneToWorld(float4( 0, 1, beam.zoomY, beam.aniso.w), right, up, forward, apex);
+                    p0[4] = PlaneToWorld(float4( 0, 0, 1, -beam.frustumNearZ),    right, up, forward, apex);
+                    p0[5] = PlaneToWorld(float4( 0, 0,-1,  beam.frustumFarZ),     right, up, forward, apex);
 
-                    bool check = frustum_overlap(plane0Left, plane0Right, plane0Bottom,
-                                                 plane0Top,  plane0Near,  plane0Far,
-                                                 plane1Left, plane1Right, plane1Bottom,
-                                                 plane1Top,  plane1Near,  plane1Far);
+                    float4 p1[6];
+                    p1[0] = R0 - xMin * R3;   p1[1] = xMax * R3 - R0;
+                    p1[2] = R1 - yMin * R3;   p1[3] = yMax * R3 - R1;
+                    p1[4] = R3 - R2;          p1[5] = R2;
+                    bool check = frustum_overlap(p0, p1);
 
-                    beam.counter += check ? 1 : 0;
-
-                    //if(settings.color.r > 0)
-                    //{
-                    //    if(q / 32 == 0) o.beam.mask.r |= 1 << (q % 32);
-                    //    if(q / 32 == 1) o.beam.mask.g |= 1 << (q % 32);
-                    //    if(q / 32 == 2) o.beam.mask.b |= 1 << (q % 32);
-                    //    if(q / 32 == 3) o.beam.mask.a |= 1 << (q % 32);
-                    //    //return o;
-                    //}
+                    if(check && settings.color.r > 0)
+                    {
+                        // set bitmask for this beam existing!
+                        mask[q / 32] |= (1U << (q % 32));
+                        beam.counter += check ? 1 : 0;
+                    }
                 }
                 
-               
+                o.mask.r = mask[0];
+                o.mask.g = mask[1];
+                o.mask.b = mask[2];
+                o.mask.a = mask[3];
                 float3 worldPos = mul(unity_ObjectToWorld, float4(vertexPos.xyz, 1)).xyz;
 
-                float3 rayDir = normalize(worldPos - _WorldSpaceCameraPos);
-                float3 rayOrigin = _WorldSpaceCameraPos;
-                float3 cameraForward = unity_CameraToWorld._m02_m12_m22;//WorldToFrustumVector(apex, forward, right, up, unity_CameraToWorld._m02_m12_m22);
-                bool useQuad = true;
-                // Make the frustum into a fullscreen quad, we are inside it anyways so performance should be unaffected.
-                if (useQuad)
+                float3 cameraForward = unity_CameraToWorld._m02_m12_m22;
+
                 {
-                    //vertexPos.x = -vertexPos.x;
                     float2 ndc = (vertexPos.xy);
                     beam.vertex = float4(ndc, UNITY_NEAR_CLIP_VALUE, 1);
                 
@@ -743,16 +713,16 @@ Shader "LUTBeam/Deferred"
                         d * (ndc.y + UNITY_MATRIX_P._m12) / UNITY_MATRIX_P._m11,
                         -d);
                     float3 wp = mul(UNITY_MATRIX_I_V, float4(viewPos, 1)).xyz;
-                    
-                    //worldPosLocal.xyz = WorldToFrustumPosition(apex, forward, right, up, wp);
+                    worldPos = wp;
+                    //worldPosLocal.xyz = WorldToFrustumPosition(wp, right, up, forward, apex);
                     beam.screenPosition    = ComputeScreenPos(beam.vertex).xy;
                     beam.frustumCorrection = dot(beam.vertex, CalculateFrustumCorrection());
                 }
 
-                //if(!check)
-                //    beam.vertex = asfloat(-1);
-
-                //beam.rayDir = (worldPosLocal - beam.rayOrigin);
+                float3 rayDir = normalize(worldPos - _WorldSpaceCameraPos);
+                float3 rayOrigin = _WorldSpaceCameraPos;
+                beam.rayDir = rayDir;//(worldPosLocal - beam.rayOrigin);
+                beam.rayOrigin = rayOrigin;
 
                 beam.DepthFadeData = UNITY_MATRIX_P._34 / dot(cameraForward, rayDir);
 
@@ -772,229 +742,261 @@ Shader "LUTBeam/Deferred"
                 UNITY_SETUP_INSTANCE_ID(i);
                 UNITY_SETUP_STEREO_EYE_INDEX_POST_VERTEX(i);
                 
-                //int q = 0;
-                //float4 Line0 = _DataTexture.Load(int3(q, 0, 0));
-                //float4 Line1 = _DataTexture.Load(int3(q, 1, 0));
-                //float4 Line2 = _DataTexture.Load(int3(q, 2, 0));
-                //float4 Line3 = _DataTexture.Load(int3(q, 3, 0));
-                //float4 Line4 = _DataTexture.Load(int3(q, 4, 0));
-                //float4 Line5 = _DataTexture.Load(int3(q, 5, 0));
-                //
-                //BeamSettings settings = DefaultBeamSettings();
-                //settings.worldPos = Line0.xyz;
-                //settings.up = Line1.xyz;
-                //settings.forward = Line2.xyz;
-                //settings.right = cross(Line1.xyz, Line2.xyz);
-                //settings.zoomX = Line3.x;
-                //settings.zoomY = Line3.y;
-                //settings.farz = Line4.w;
-                //settings.gobo = Line5.r;
-                //settings.nearSizeX = Line3.z;
-                //settings.nearSizeY = Line3.w;
-                ////settings.offset = _Offset;
-                //settings.color = Line4.rgb;
-                //settings.brightnessVolume = Line0.w;
-                //settings.brightnessGobo = Line2.w;
-                //settings.beamFalloff = Line1.w;
-
+                float3 result = 0;
+                
+                uint mask[4] = { i.mask.r, i.mask.g, i.mask.b, i.mask.a};
                 BeamData beam = i.beam;
-                return float4(i.beam.counter, 1);
-
-                float beamFalloff = beam.falloff;
-                float frustumNearZ = beam.frustumNearZ;
-                float frustumFarZ = beam.frustumFarZ;
-                float invBeamLength = beam.invBeamLength;
-
-                float3 rayDir = beam.rayDir;
-                float3 rayOrigin = beam.rayOrigin;
-
-                float2 suv = beam.screenPosition.xy;
-    
-                float raw_dist = _CameraDepthTexture.SampleLevel(point_clamp_sampler, suv, 0).r;
-                float SceneDistance = beam.DepthFadeData / (raw_dist + beam.frustumCorrection);
-
-                #if defined(SHADER_API_MOBILE)
-                    SceneDistance = 9999999;
-                #endif
-
-                if(!DepthExists())
-                    SceneDistance = 9999999;
-
-                float4 leftPlane   = float4(float3( 1, 0, beam.zoomX), beam.aniso.z);
-                float4 rightPlane  = float4(float3(-1, 0, beam.zoomX), beam.aniso.z);
-                float4 bottomPlane = float4(float3( 0,-1, beam.zoomY), beam.aniso.w);
-                float4 topPlane    = float4(float3( 0, 1, beam.zoomY), beam.aniso.w);
-                float4 nearPlane   = float4(float3(0, 0,  1), -beam.frustumNearZ);
-                float4 farPlane    = float4(float3(0, 0, -1),  beam.frustumFarZ);
-    
-                float4 planes[5] = { leftPlane, rightPlane, bottomPlane, topPlane, beam.clipPlane };
-
-                // Near plane and far plane are parallel, so we can do the angle math just once for them :>
-                float invDz = rcp(rayDir.z);
-                float t4 =  (nearPlane.w - dot(nearPlane.xyz, beam.rayOrigin)) * invDz;
-                float t5 = -(farPlane.w - dot(farPlane.xyz, beam.rayOrigin)) * invDz;
-                float tMin = min(t4, t5);
-                float tMax = max(t4, t5);
-
-                [branch]
-                if(_VRChatMirrorMode != 0)
+                [loop]
+                for (int q = 0; q < 128; q++)
                 {
-                    [loop]
-                    for(int i = 0; i < 5; i++)
-                    {
-                        float denom = dot(planes[i].xyz, rayDir);
-                        float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
-            
-                        if(denom < 0)
-                            tMin = max(tMin, t);
-                        else
-                            tMax = min(tMax, t);
-                    }
-                }
-                else
-                {
-                    [loop]
-                    for(int i = 0; i < 4; i++)
-                    {
-                        float denom = dot(planes[i].xyz, rayDir);
-                        float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
-            
-                        if(denom < 0)
-                            tMin = max(tMin, t);
-                        else
-                            tMax = min(tMax, t);
-                    }
-                }
+                    // check bitmask for if we should skip this beam
+                    if (!(mask[q/32] & (1U << (q%32))))
+                        continue;
+                    
+                    float4 Line0 = _DataTexture.Load(int3(q, 0, 0));
+                    float4 Line1 = _DataTexture.Load(int3(q, 1, 0));
+                    float4 Line2 = _DataTexture.Load(int3(q, 2, 0));
+                    float4 Line3 = _DataTexture.Load(int3(q, 3, 0));
+                    float4 Line4 = _DataTexture.Load(int3(q, 4, 0));
+                    float4 Line5 = _DataTexture.Load(int3(q, 5, 0));
+                
+                    BeamSettings settings = DefaultBeamSettings();
+                    settings.worldPos = Line0.xyz;
+                    settings.up = Line1.xyz;
+                    settings.forward = Line2.xyz;
+                    settings.right = cross(Line1.xyz, Line2.xyz);
+                    settings.zoomX = Line3.x;
+                    settings.zoomY = Line3.y;
+                    settings.farz = Line4.w;
+                    settings.gobo = Line5.r;
+                    settings.nearSizeX = Line3.z;
+                    settings.nearSizeY = Line3.w;
 
-                #if LUTBEAM_FRAMING
+                    settings.color = Line4.rgb;
+                    settings.brightnessVolume = Line0.w;
+                    settings.brightnessGobo = Line2.w;
+                    settings.beamFalloff = Line1.w;
+
+                        float ex = settings.nearSizeX + tan(radians(max(settings.zoomX/2, 1))) * settings.farz;
+                        float ey = settings.nearSizeY + tan(radians(max(settings.zoomY/2, 1))) * settings.farz;
+                        float minWidth = 0.05;
+                        settings.color *= 2 / pow(ex * ey + minWidth, 0.7);
+
+                        beam.zoomX = tan(radians(max(settings.zoomX/2, 1)));
+                        beam.zoomY = tan(radians(max(settings.zoomY/2, 1)));
+    
+                        beam.falloff = settings.beamFalloff;
+                        float beamFalloff = settings.beamFalloff;
+                        beam.zoomX = max(beam.zoomX, 0.0001);
+                        beam.zoomY = max(beam.zoomY, 0.0001);
+
+                        float apexDistX = settings.nearSizeX / beam.zoomX;
+                        float apexDistY = settings.nearSizeY / beam.zoomY;
+                        float frustumNearZ  = max(apexDistX, apexDistY);
+                        float frustumFarZ   = frustumNearZ + settings.farz;
+                        float frustumOffset = -frustumNearZ;
+
+                        float apexZX = frustumNearZ - apexDistX;
+                        float apexZY = frustumNearZ - apexDistY;
+                        float wX = -beam.zoomX * apexZX;
+                        float wY = -beam.zoomY * apexZY;
+                        beam.aniso = float4(apexZX, apexZY, wX, wY);
+
+                        float p = settings.beamFalloff + 1e-4;
+    
+                        float falloffNorm = exp2(3.26 - 1.54*p - 0.68*p*p);
+
+                        beam.colorGobo = settings.color * settings.brightnessGobo * 5;
+                        beam.colorVolume = settings.color * settings.brightnessVolume * falloffNorm * 0.1; 
+
+                        float maxVolume = max(max(beam.colorVolume.r, beam.colorVolume.g), beam.colorVolume.b);
+                        float maxGobo = max(max(beam.colorGobo.r, beam.colorGobo.g), beam.colorGobo.b) * 0.05;
+                        float C = max(maxVolume, maxGobo);
+
+                        float3 right   = settings.right  ;
+                        float3 up      = settings.up     ;
+                        float3 forward = settings.forward;
+    
+                        float3 corrected_pos = 0;
+                        float3 frustumOffsetVector = float3(0, 0, frustumOffset);
+
+                        float3 apex = settings.worldPos;//(corrected_pos + frustumOffsetVector).xyz;
+
+                    float invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
+                    float3 rayDir = beam.rayDir;
+                    float3 rayOrigin = beam.rayOrigin;
+
+                    rayDir = WorldToFrustumVector(rayDir, right, up, forward, apex);
+                    rayOrigin = WorldToFrustumPosition(rayOrigin, right, up, forward, apex);
+
+                    float2 suv = beam.screenPosition.xy;
+    
+                    float raw_dist = _CameraDepthTexture.SampleLevel(point_clamp_sampler, suv, 0).r;
+                    float SceneDistance = beam.DepthFadeData / (raw_dist + beam.frustumCorrection);
+
+                    float4 planeLeft   = float4(float3( 1,  0, beam.zoomX), beam.aniso.z);
+                    float4 planeRight  = float4(float3(-1,  0, beam.zoomX), beam.aniso.z);
+                    float4 planeBottom = float4(float3( 0, -1, beam.zoomY), beam.aniso.w);
+                    float4 planeTop    = float4(float3( 0,  1, beam.zoomY), beam.aniso.w);
+                    float4 planeNear   = float4(float3(0, 0, 1), -beam.frustumNearZ);
+                    float4 planeFar    = float4(float3(0, 0, -1), beam.frustumFarZ);
+
+                    //planeLeft   = PlaneToWorld(planeLeft   , right, up, forward, apex);
+                    //planeRight  = PlaneToWorld(planeRight  , right, up, forward, apex);
+                    //planeBottom = PlaneToWorld(planeBottom , right, up, forward, apex);
+                    //planeTop    = PlaneToWorld(planeTop    , right, up, forward, apex);
+                    //planeNear   = PlaneToWorld(planeNear   , right, up, forward, apex);
+                    //planeFar    = PlaneToWorld(planeFar    , right, up, forward, apex);
+
+                    float4 planes[6] = { planeLeft, planeRight, planeBottom, planeTop, planeNear, planeFar };
+
+                    // Near plane and far plane are parallel, so we can do the angle math just once for them :>
+                    float tMin = -9999;
+                    float tMax = 9999;
+
+                    //[branch]
+                    //if(_VRChatMirrorMode != 0)
+                    //{
+                        [loop]
+                        for(int i = 0; i < 6; i++)
+                        {
+                            float denom = dot(planes[i].xyz, rayDir);
+                            float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+            
+                            if(denom < 0)
+                                tMin = max(tMin, t);
+                            else
+                                tMax = min(tMax, t);
+                        }
+                    //}
+                    //else
+                    //{
+                    //    [loop]
+                    //    for(int i = 0; i < 4; i++)
+                    //    {
+                    //        float denom = dot(planes[i].xyz, rayDir);
+                    //        float t = (planes[i].w - dot(planes[i].xyz, rayOrigin)) / denom;
+                    //
+                    //        if(denom < 0)
+                    //            tMin = max(tMin, t);
+                    //        else
+                    //            tMax = min(tMax, t);
+                    //    }
+                    //}
+                
+                    if(tMax - tMin < 0.00001)
+                        continue;
+                    //return float4(cluster, 0);
+
+                    tMin = max(0, tMin);
+                    tMax = max(0, tMax);
+                
+                    //return float4(cluster + frac(tMin) + beam.counter.x * 0.1, 0);//float4(saturate(rayDir), 1);
+    
+                    bool hit = (tMax > SceneDistance) && (SceneDistance > 0.000001);
+
+                    // NOTE(valuef): Regarding the if: Only clamp when the pixel depth isn't approaching the far plane.
+                    // This should only be false in mirrors due to the oblique frustum correction when the pixel we're drawing
+                    // hasn't had any depth written to it.
+                    // 2025-09-23
+                    if(SceneDistance > 0.000001)
+                    {
+                        tMin = min(tMin, SceneDistance);
+                        tMax = min(tMax, SceneDistance);
+                    }
+
+                    float3 entryPos = (rayOrigin + rayDir * tMin);
+                    float3 exitPos = (rayOrigin + rayDir * tMax);
+    
+                    float3 entryNormalized = -entryPos.xyz;
+                    float3 exitNormalized  = -exitPos.xyz;
+
+                    entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
+                    entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
+                    entryNormalized.xy = entryNormalized.xy + 0.5;
+
+                    exitNormalized.x /= (exitNormalized.z - beam.aniso.x) * beam.zoomX * 2;
+                    exitNormalized.y /= (exitNormalized.z - beam.aniso.y) * beam.zoomY * 2;
+                    exitNormalized.xy = exitNormalized.xy + 0.5;
+                
+                    //return float4(frac(entryNormalized), 0);//float4(saturate(rayDir), 1);
+                    float t = 0;
+                    float3 col = 0;
+                
+                    // closest point on ray
+                    float3 A  = entryPos - float3(0, 0, -frustumNearZ);
+                    float3 B  = exitPos  - float3(0, 0, -frustumNearZ);
+                    float3 AB = B - A;
+                    float  d2 = max(dot(AB, AB), 1e-5);
+                    float  ct = saturate(dot(-A, AB) / d2);
+                    float3 closest = A + ct * AB;
+                    float distToSource = length(closest);
+    
+                    // Normalize to 0-1
+                    t = saturate((distToSource + 0.06) * beam.invBeamLength);
+    
+                    float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
+                    float volFacNotHot = (1 - t) * (1 - t) * rcp(t + 0.01);
+                    float3 volColor = volFac * beam.colorVolume;
+    
+                    float framing = 1;
+    
+                    float penumbra = 10;
+                    float blur = 0;
+                    #if LUTBEAM_FOCUS
+                        blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_apertureSize);
+                        penumbra = rcp((blur*4+1) * t);
+                    #endif
+    
+                    float4 B0 = 0;
+                    #if LUTBEAM_FRAMING
                     [branch]
                     if(beam.framing > 0)
                     {
-                        float4 pn = beam.bladePn;
-                        float4 dn = beam.bladeDn;
-                        float4 t  = pn / dn;
-            
-                        if (dn.x >= 0) tMax = min(tMax, t.x);
-                        else tMin = max(tMin, t.x);
-    
-                        if (dn.y >= 0) tMax = min(tMax, t.y);
-                        else tMin = max(tMin, t.y);
-    
-                        if (dn.z >= 0) tMax = min(tMax, t.z);
-                        else tMin = max(tMin, t.z);
-    
-                        if (dn.w >= 0) tMax = min(tMax, t.w);
-                        else tMin = max(tMin, t.w);
+                        float4 A = (beam.bladePn - tMin * beam.bladeDn) * penumbra;
+                        B0 = (beam.bladePn - tMax * beam.bladeDn) * penumbra;
+                        float4 S = (saturate(A) + 4 * saturate(0.5 * (A + B0)) + saturate(B0)) * (1.0 / 6.0);
+                        framing = S.x * S.y * S.z * S.w;
                     }
-                #endif
-    
-                //if(tMax - tMin < 0.00001)
-                //    discard;
-
-                tMin = max(0, tMin);
-                tMax = max(0, tMax);
-
-    
-                bool hit = (tMax > SceneDistance) && (SceneDistance > 0.000001);
-
-                // NOTE(valuef): Regarding the if: Only clamp when the pixel depth isn't approaching the far plane.
-                // This should only be false in mirrors due to the oblique frustum correction when the pixel we're drawing
-                // hasn't had any depth written to it.
-                // 2025-09-23
-                if(SceneDistance > 0.000001)
-                {
-                    tMin = min(tMin, SceneDistance);
-                    tMax = min(tMax, SceneDistance);
-                }
-
-                float3 entryPos = (rayOrigin + rayDir * tMin);
-                float3 exitPos = (rayOrigin + rayDir * tMax);
-    
-                float3 entryNormalized = -entryPos.xyz;
-                float3 exitNormalized  = -exitPos.xyz;
-
-                entryNormalized.x /= (entryNormalized.z - beam.aniso.x) * beam.zoomX * 2;
-                entryNormalized.y /= (entryNormalized.z - beam.aniso.y) * beam.zoomY * 2;
-                entryNormalized.xy = entryNormalized.xy + 0.5;
-
-                exitNormalized.x /= (exitNormalized.z - beam.aniso.x) * beam.zoomX * 2;
-                exitNormalized.y /= (exitNormalized.z - beam.aniso.y) * beam.zoomY * 2;
-                exitNormalized.xy = exitNormalized.xy + 0.5;
-
-                float t = 0;
-                float3 col = 0;
+                    #endif
                 
-                // closest point on ray
-                float3 A  = entryPos - float3(0, 0, -frustumNearZ);
-                float3 B  = exitPos  - float3(0, 0, -frustumNearZ);
-                float3 AB = B - A;
-                float  d2 = max(dot(AB, AB), 1e-5);
-                float  ct = saturate(dot(-A, AB) / d2);
-                float3 closest = A + ct * AB;
-                float distToSource = length(closest);
-    
-                // Normalize to 0-1
-                t = saturate((distToSource + 0.06) * beam.invBeamLength);
-    
-                float volFac = (1 - t) * (1 - t) * pow(t + 0.01, -beamFalloff);
-                float volFacNotHot = (1 - t) * (1 - t) * rcp(t + 0.01);
-                float3 volColor = volFac * beam.colorVolume;
-    
-                float framing = 1;
-    
-                float penumbra = 10;
-                float blur = 0;
-                #if LUTBEAM_FOCUS
-                    blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_apertureSize);
-                    penumbra = rcp((blur*4+1) * t);
-                #endif
-    
-                float4 B0 = 0;
-                #if LUTBEAM_FRAMING
-                [branch]
-                if(beam.framing > 0)
-                {
-                    float4 A = (beam.bladePn - tMin * beam.bladeDn) * penumbra;
-                    B0 = (beam.bladePn - tMax * beam.bladeDn) * penumbra;
-                    float4 S = (saturate(A) + 4 * saturate(0.5 * (A + B0)) + saturate(B0)) * (1.0 / 6.0);
-                    framing = S.x * S.y * S.z * S.w;
-                }
-                #endif
-                
-                // early out if the fade would make it invisible anyways
-                [branch]
-                if (volFac * framing < 0.001)
-                    discard;
-
-                col = MagicSample(entryNormalized.xy, exitNormalized.xy, blur, beam.nestedStruct);
-
-                col *= volColor * framing;
-    
-                // gobo on the surface
-                [branch]
-                if(hit && (any(beam.colorGobo)))
-                {
-                    float3 goboResult = _GoboTex.SampleLevel(trilinear_clamp_sampler, float3(exitNormalized.xy, _Gobo), blur * 5).rrr;
-
-                    // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
+                    // early out if the fade would make it invisible anyways
                     [branch]
-                    if(any(goboResult))
+                    if (volFac * framing < 0.001)
+                        discard;
+
+                    col = MagicSample(entryNormalized.xy, exitNormalized.xy, blur, beam.nestedStruct);
+
+                    col *= volColor * framing;
+    
+                    // gobo on the surface
+                    [branch]
+                    if(hit && (any(beam.colorGobo)))
                     {
-                        goboResult *= volFacNotHot * beam.colorGobo;
+                        float3 goboResult = _GoboTex.SampleLevel(trilinear_clamp_sampler, float3(exitNormalized.xy, _Gobo), blur * 5).rrr;
 
-                        float4 grab = _GrabTexture.SampleLevel(trilinear_clamp_sampler, suv, 0);
-                        #if LUTBEAM_AVATAR
-                            grab = 1;
-                        #endif
+                        // large parts of gobos are black, so we can skip the heavy grab sample pretty often!
+                        [branch]
+                        if(any(goboResult))
+                        {
+                            goboResult *= volFacNotHot * beam.colorGobo;
 
-                        col += grab.rgb * goboResult;
+                            float4 grab = _GrabTexture.SampleLevel(trilinear_clamp_sampler, suv, 0);
+                            #if LUTBEAM_AVATAR
+                                grab = 1;
+                            #endif
+
+                            col += grab.rgb * goboResult;
+                        }
                     }
-                }
                 
-                col = i.beam.counter*0.1;
+                    result += col;
 
-                return float4(col, 1);
+                }
 
+                float3 cluster = (float3(beam.counter.x,0,0)) * 0.1;
+
+                return float4(result.rgb + cluster, 1);
             }
             ENDCG
         }
