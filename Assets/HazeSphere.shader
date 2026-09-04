@@ -42,15 +42,14 @@ Shader "FX/HazeSphere"
                 noperspective float frustumCorrection : TEXCOORD40;
                 noperspective float DepthFadeData : TEXCOORD56;
 
-                float radiusScale   : TEXCOORD1;
-                float b             : TEXCOORD2;
-                float c             : TEXCOORD3;
-                float powMask       : TEXCOORD4;
-                float hitFar        : TEXCOORD5;
-                float hitNear       : TEXCOORD6;
-                float d             : TEXCOORD7;
-                float hit           : TEXCOORD8;
-                float obliqueFix    : TEXCOORD9;
+                float radiusScale           : TEXCOORD1;
+                float b                     : TEXCOORD2;
+                float c                     : TEXCOORD3;
+                float powMask               : TEXCOORD4;
+                float hitFar                : TEXCOORD5;
+                float hitNear               : TEXCOORD6;
+                float d                     : TEXCOORD7;
+                float hit                   : TEXCOORD8;
 
                 UNITY_VERTEX_INPUT_INSTANCE_ID 
             };
@@ -99,6 +98,7 @@ Shader "FX/HazeSphere"
 
                 input.vertex = UnityObjectToClipPos(app.vertex);
                 input.screenPosition = ComputeScreenPos(input.vertex);
+                input.screenPosition /= input.vertex.w;
                 float3 worldPos = mul(unity_ObjectToWorld, app.vertex).xyz;
 
                 float Radius = 0.49f;
@@ -144,7 +144,9 @@ Shader "FX/HazeSphere"
                 input.hitNear = HitNear;
                 input.d = d;
                 input.hit = Hit;
-			    input.obliqueFix = dot(input.vertex, CalculateFrustumCorrection());
+			    input.frustumCorrection = dot(input.vertex, CalculateFrustumCorrection());
+                input.frustumCorrection *= UNITY_MATRIX_P._34;
+                input.frustumCorrection /= input.vertex.w;
                 input.DepthFadeData = UNITY_MATRIX_P._34 / dot(CameraForward, RayDirection);
 
                 return input;

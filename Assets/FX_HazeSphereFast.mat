@@ -25,8 +25,8 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _Opacity: 1
-    - _Softness: 0
+    - _Opacity: 9.65
+    - _Softness: 4.61
     m_Colors:
     - _Color: {r: 0.64, g: 0.77, b: 0.94, a: 1}
   m_BuildTextureStacks: []
