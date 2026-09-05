@@ -96,7 +96,11 @@ public class LUTBeamManager : MonoBehaviour
                 if (!(gobos[q] is Texture2D))
                     continue;
 
-                Texture2D InputGobo = gobos[q] as Texture2D;
+                // load the texture from disk instead so it's not compressed.
+                Texture2D InputGobo = new Texture2D(2, 2);
+                string path = AssetDatabase.GetAssetPath(gobos[q]);
+                byte[] bytes = File.ReadAllBytes(path);
+                ImageConversion.LoadImage(InputGobo, bytes, false);
 
                 if (!InputGobo)
                     return;

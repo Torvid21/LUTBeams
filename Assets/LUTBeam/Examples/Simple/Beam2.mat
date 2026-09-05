@@ -73,7 +73,7 @@ Material:
     - _FramingAngle: 0
     - _FramingEnabled: 0
     - _Frost: 0
-    - _Gobo: 3
+    - _Gobo: 5
     - _GoboColorEnabled: 0
     - _GoboIntensity: 3.5
     - _Hotness: 1

@@ -25,7 +25,7 @@ Shader "LUTBeam/GoboLookupGenerator" {
 			float _StepCount;
             
             #include "UnityCG.cginc"
-            #include "Assets/LUTBeam/LUTBeam.cginc"
+            #include "LUTBeam.cginc"
             
             struct appdata
             {
