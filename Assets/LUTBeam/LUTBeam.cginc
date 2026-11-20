@@ -425,8 +425,8 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float2 r2 = float2(cos(angle+tau*0.50), sin(angle+tau*0.50));
     float2 r3 = float2(cos(angle+tau*0.75), sin(angle+tau*0.75));
     
-    // Scale framing independently by zoom angles for each direction when enabled
-    float2 zoomScale = settings.framingScaleToZoom > 0.5 ? float2(1.0 / beam.zoomX, 1.0 / beam.zoomY) : float2(1.0, 1.0);
+    // Blend between fixed framing and independent zoom scaling on each axis.
+    float2 zoomScale = lerp(float2(1.0, 1.0), float2(1.0 / beam.zoomX, 1.0 / beam.zoomY), settings.framingScaleToZoom);
     float2 r0_scaled = r0 * zoomScale;
     float2 r1_scaled = r1 * zoomScale;
     float2 r2_scaled = r2 * zoomScale;
