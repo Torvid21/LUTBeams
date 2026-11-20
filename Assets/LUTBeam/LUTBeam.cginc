@@ -43,6 +43,7 @@ struct BeamSettings
     float framing3A;
     float framing3B;
     float framingAngle;
+    float framingScaleToZoom;
 };
 
 struct BeamData
@@ -70,13 +71,13 @@ struct BeamData
 
     noperspective float DepthFadeData : TEXCOORD56;
 
-#if LUTBEAM_FOCUS
+#ifdef LUTBEAM_FOCUS
     nointerpolation float focus : TEXCOORD57;
     nointerpolation float focus_apertureSize : TEXCOORD64;
     nointerpolation float frost : TEXCOORD58;
 #endif
 
-#if LUTBEAM_FRAMING
+#ifdef LUTBEAM_FRAMING
     nointerpolation float4 bladePn : TEXCOORD59;
     float4 bladeDn : TEXCOORD60;
     nointerpolation bool framing : TEXCOORD63;
@@ -180,6 +181,7 @@ BeamSettings DefaultBeamSettings()
     settings.framing3A = 0;
     settings.framing3B = 0;
     settings.framingAngle = 0;
+    settings.framingScaleToZoom = 1.0;
     return settings;
 }
 #define pi 3.1415926535897
@@ -191,7 +193,7 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     beam.zoomX = tan(radians(max(settings.zoomX/2, 1)));
     beam.zoomY = tan(radians(max(settings.zoomY/2, 1)));
     
-#if LUTBEAM_FOCUS
+#ifdef LUTBEAM_FOCUS
     beam.focus = settings.focus;
     beam.frost = settings.frost;
     float FocusZoomExtra = beam.focus*0.05 * settings.focus_apertureSize;
@@ -423,6 +425,13 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float2 r2 = float2(cos(angle+tau*0.50), sin(angle+tau*0.50));
     float2 r3 = float2(cos(angle+tau*0.75), sin(angle+tau*0.75));
     
+    // Scale framing independently by zoom angles for each direction when enabled
+    float2 zoomScale = settings.framingScaleToZoom > 0.5 ? float2(1.0 / beam.zoomX, 1.0 / beam.zoomY) : float2(1.0, 1.0);
+    float2 r0_scaled = r0 * zoomScale;
+    float2 r1_scaled = r1 * zoomScale;
+    float2 r2_scaled = r2 * zoomScale;
+    float2 r3_scaled = r3 * zoomScale;
+    
     float invTwoL = 0.5;
 
     float f0A = settings.framing0A*2-1;
@@ -434,23 +443,23 @@ BeamData LUTBeamVert(float4 vertexPos, BeamSettings settings)
     float f3A = settings.framing3A*2-1;
     float f3B = settings.framing3B*2-1;
     
-    float3 plane0 = float3(r0 * (invTwoL * 2) + float2(r0.y, -r0.x) * (f0B - f0A), -invTwoL * (f0A + f0B));
-    float3 plane1 = float3(r1 * (invTwoL * 2) + float2(r1.y, -r1.x) * (f1B - f1A), -invTwoL * (f1A + f1B));
-    float3 plane2 = float3(r2 * (invTwoL * 2) + float2(r2.y, -r2.x) * (f2B - f2A), -invTwoL * (f2A + f2B));
-    float3 plane3 = float3(r3 * (invTwoL * 2) + float2(r3.y, -r3.x) * (f3B - f3A), -invTwoL * (f3A + f3B));
+    float3 plane0 = float3(r0_scaled * (invTwoL * 2) + float2(r0_scaled.y, -r0_scaled.x) * (f0B - f0A), -invTwoL * (f0A + f0B));
+    float3 plane1 = float3(r1_scaled * (invTwoL * 2) + float2(r1_scaled.y, -r1_scaled.x) * (f1B - f1A), -invTwoL * (f1A + f1B));
+    float3 plane2 = float3(r2_scaled * (invTwoL * 2) + float2(r2_scaled.y, -r2_scaled.x) * (f2B - f2A), -invTwoL * (f2A + f2B));
+    float3 plane3 = float3(r3_scaled * (invTwoL * 2) + float2(r3_scaled.y, -r3_scaled.x) * (f3B - f3A), -invTwoL * (f3A + f3B));
     
-#if LUTBEAM_FRAMING
+#ifdef LUTBEAM_FRAMING
     beam.bladePn = float4(-dot(plane0, beam.rayOrigin), -dot(plane1, beam.rayOrigin), -dot(plane2, beam.rayOrigin), -dot(plane3, beam.rayOrigin));
     beam.bladeDn = float4( dot(plane0, beam.rayDir),     dot(plane1, beam.rayDir),     dot(plane2, beam.rayDir),     dot(plane3, beam.rayDir));
     beam.framing = (
-        settings.framing0A > 0.1 || 
-        settings.framing0B > 0.1 || 
-        settings.framing1A > 0.1 || 
-        settings.framing1B > 0.1 || 
-        settings.framing2A > 0.1 || 
-        settings.framing2B > 0.1 || 
-        settings.framing3A > 0.1 || 
-        settings.framing3B > 0.1);
+        settings.framing0A > 0.01 || 
+        settings.framing0B > 0.01 || 
+        settings.framing1A > 0.01 || 
+        settings.framing1B > 0.01 || 
+        settings.framing2A > 0.01 || 
+        settings.framing2B > 0.01 || 
+        settings.framing3A > 0.01 || 
+        settings.framing3B > 0.01);
 #endif
 
     beam.invBeamLength = 1 / abs(frustumNearZ - frustumFarZ);
@@ -484,7 +493,7 @@ float3 MagicSample(float2 start, float2 end, float blur, NESTED_STRUCT_TYPE nest
         
         float mip = 0;
         float2 base = 0;
-        #if LUTBEAM_FOCUS
+        #ifdef LUTBEAM_FOCUS
             mip = blur * 2.5;
             float margin = clamp(exp2(mip), 0.5, end_size * 0.5);
             float2 inTile = margin + saturate(end) * (end_size - 2 * margin);
@@ -580,7 +589,7 @@ float3 LUTBeamFrag(BeamData beam)
         }
     }
 
-    #if LUTBEAM_FRAMING
+    #ifdef LUTBEAM_FRAMING
         [branch]
         if(beam.framing > 0)
         {
@@ -658,13 +667,13 @@ float3 LUTBeamFrag(BeamData beam)
     
     float penumbra = 10;
     float blur = 0;
-    #if LUTBEAM_FOCUS
+    #ifdef LUTBEAM_FOCUS
         blur = CalculateMip(t, beam.focus, beam.frost, beam.focus_apertureSize);
         penumbra = rcp((blur*4+1) * t);
     #endif
     
     float4 B0 = 0;
-    #if LUTBEAM_FRAMING
+    #ifdef LUTBEAM_FRAMING
     [branch]
     if(beam.framing > 0)
     {
@@ -698,7 +707,7 @@ float3 LUTBeamFrag(BeamData beam)
             float3 goboResult = float3(1, 1, 1);
         #endif
             
-    #if LUTBEAM_FRAMING
+    #ifdef LUTBEAM_FRAMING
         [branch]
         if (beam.framing)
         {
