@@ -50,7 +50,39 @@ public class LUTBeamManager : MonoBehaviour
 
     void SetProgress(float progress, string message)
     {
+        Debug.Log($"[LUT Beams] {message}", this);
         EditorUtility.DisplayProgressBar("LUT Beams", message, progress);
+    }
+
+    Texture2D RenderToTexture(Material material, int resolution, bool flush)
+    {
+        RenderTexture previousActive = RenderTexture.active;
+        RenderTexture target = RenderTexture.GetTemporary(resolution, resolution, 32, RenderTextureFormat.ARGBFloat);
+        Texture2D texture = null;
+        bool completed = false;
+        try
+        {
+            Debug.Log($"[LUT Beams] Rendering {resolution}x{resolution} temporary render texture (ID {target.GetInstanceID()}).", this);
+            Graphics.Blit(null, target, material);
+            if (flush)
+                GL.Flush();
+
+            RenderTexture.active = target;
+            texture = new Texture2D(resolution, resolution, TextureFormat.RGBAFloat, false);
+            texture.ReadPixels(new Rect(0, 0, resolution, resolution), 0, 0);
+            texture.Apply();
+            completed = true;
+            return texture;
+        }
+        finally
+        {
+            RenderTexture.active = previousActive;
+            int targetId = target.GetInstanceID();
+            RenderTexture.ReleaseTemporary(target);
+            Debug.Log($"[LUT Beams] Released temporary render texture (ID {targetId}).", this);
+            if (!completed && texture)
+                Object.DestroyImmediate(texture);
+        }
     }
 
     [ContextMenu("Generate Texture Array")]
@@ -59,10 +91,20 @@ public class LUTBeamManager : MonoBehaviour
         SetProgress(0, "Setup");
 
         if (!IsPowerOfTwo(GoboResolution))
+        {
+            Debug.LogError($"[LUT Beams] Gobo resolution {GoboResolution} must be a power of two.", this);
+            EditorUtility.ClearProgressBar();
             return;
+        }
 
         if (!IsPowerOfTwo(LUTResolution))
+        {
+            Debug.LogError($"[LUT Beams] LUT resolution {LUTResolution} must be a power of two.", this);
+            EditorUtility.ClearProgressBar();
             return;
+        }
+
+        Debug.Log($"[LUT Beams] Starting generation: {goboArray.Length} arrays, gobo resolution {GoboResolution}, LUT resolution {LUTResolution}.", this);
 
         // calculate mip count.
         // lowest resolution BC4 supports is 4x4 so stop there.
@@ -79,6 +121,7 @@ public class LUTBeamManager : MonoBehaviour
         {
             Texture[] gobos = goboArray[i].gobos;
             string prefix = goboArray[i].name;
+            Debug.Log($"[LUT Beams] Array {i + 1}/{goboArray.Length}: '{prefix}' ({gobos.Length} textures).", this);
 
             if (gobos.Length == 0)
                 continue;
@@ -94,7 +137,12 @@ public class LUTBeamManager : MonoBehaviour
                 SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Setup...");
 
                 if (!(gobos[q] is Texture2D))
+                {
+                    Debug.LogWarning($"[LUT Beams] Array '{prefix}', texture {q + 1}/{gobos.Length} is not a Texture2D; skipping.", this);
                     continue;
+                }
+
+                Debug.Log($"[LUT Beams] Processing '{gobos[q].name}'.", this);
 
                 // load the texture from disk instead so it's not compressed.
                 Texture2D InputGobo = new Texture2D(2, 2);
@@ -113,46 +161,38 @@ public class LUTBeamManager : MonoBehaviour
                 for (int mip = 0; mip < goboMipCount; mip++)
                 {
                     int res = Mathf.Max(1, GoboResolution >> mip);
-                    RenderTexture tempRTGobo = new RenderTexture(res, res, 32, RenderTextureFormat.ARGBFloat);
-
                     material.SetTexture("_MainTex", mip == 0 ? InputGobo : goboTextures[q][mip - 1]);
                     Shader.SetGlobalFloat("_MipLevel", mip);
                     Shader.SetGlobalFloat("_EnableBake_Gobo", 1);
                     Shader.SetGlobalFloat("_BlurStrength", 0.01f);
-                    Graphics.Blit(null, tempRTGobo, material);
-                    Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
-                    Shader.SetGlobalFloat("_MipLevel", 0);
-
-                    RenderTexture.active = tempRTGobo;
-                    Texture2D texGobo = new Texture2D(res, res, TextureFormat.RGBAFloat, false);
-                    texGobo.ReadPixels(new Rect(0, 0, res, res), 0, 0);
-                    texGobo.Apply();
-                    RenderTexture.active = null;
-
-                    goboTextures[q][mip] = texGobo;
+                    try
+                    {
+                        goboTextures[q][mip] = RenderToTexture(material, res, false);
+                    }
+                    finally
+                    {
+                        Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
+                        Shader.SetGlobalFloat("_MipLevel", 0);
+                    }
                 }
 
                 SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Blurring (again)...");
                 for (int mip = 0; mip < goboMipCount; mip++)
                 {
                     int res = Mathf.Max(1, GoboResolution >> mip);
-                    RenderTexture tempRTGobo = new RenderTexture(res, res, 32, RenderTextureFormat.ARGBFloat);
-
                     material.SetTexture("_MainTex", mip == 0 ? InputGobo : goboTexturesExtraBlur[q][mip - 1]);
                     Shader.SetGlobalFloat("_MipLevel", mip);
                     Shader.SetGlobalFloat("_EnableBake_Gobo", 1);
                     Shader.SetGlobalFloat("_BlurStrength", 0.03f);
-                    Graphics.Blit(null, tempRTGobo, material);
-                    Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
-                    Shader.SetGlobalFloat("_MipLevel", 0);
-
-                    RenderTexture.active = tempRTGobo;
-                    Texture2D texGobo = new Texture2D(res, res, TextureFormat.RGBAFloat, false);
-                    texGobo.ReadPixels(new Rect(0, 0, res, res), 0, 0);
-                    texGobo.Apply();
-                    RenderTexture.active = null;
-
-                    goboTexturesExtraBlur[q][mip] = texGobo;
+                    try
+                    {
+                        goboTexturesExtraBlur[q][mip] = RenderToTexture(material, res, false);
+                    }
+                    finally
+                    {
+                        Shader.SetGlobalFloat("_EnableBake_Gobo", 0);
+                        Shader.SetGlobalFloat("_MipLevel", 0);
+                    }
                 }
 
                 SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Raymarching...");
@@ -160,53 +200,45 @@ public class LUTBeamManager : MonoBehaviour
                 for (int mip = 0; mip < lutMipCount; mip++)
                 {
                     int res = Mathf.Max(1, LUTResolution >> mip);
-                    RenderTexture tempRTLut = new RenderTexture(res, res, 32, RenderTextureFormat.ARGBFloat);
-
                     // give the volumetrics extra blurred ones.
                     material.SetTexture("_MainTex", goboTexturesExtraBlur[q][Mathf.Min(goboMipCount-1, mip)]);
                     Shader.SetGlobalFloat("_MipLevel", mip);
 
                     // Enable supersampling mode of the baker because it makes it look way better!
                     Shader.SetGlobalFloat("_EnableBake_Supersample", 1);
-                    Graphics.Blit(null, tempRTLut, material);
-                    Shader.SetGlobalFloat("_EnableBake_Supersample", 0);
-                    Shader.SetGlobalFloat("_MipLevel", 0);
-
-                    RenderTexture.active = tempRTLut;
-                    Texture2D texLut = new Texture2D(res, res, TextureFormat.RGBAFloat, false);
-                    texLut.ReadPixels(new Rect(0, 0, res, res), 0, 0);
-                    texLut.Apply();
-                    RenderTexture.active = null;
-
-                    lutTextures[q][mip] = texLut;
-                }
-
-                SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Converting to SRGB...");
-                // Convert linear to srgb in the texture
-                for (int mip = 0; mip < goboMipCount; mip++)
-                {
-                    Texture2D texGobo = goboTextures[q][mip];
-                    var data = texGobo.GetRawTextureData<float>();
-                    for (int j = 0; j < data.Length; j++)
+                    try
                     {
-                        data[j] = Mathf.LinearToGammaSpace(data[j]);
+                        lutTextures[q][mip] = RenderToTexture(material, res, true);
                     }
-                    texGobo.Apply(false, false);
+                    finally
+                    {
+                        Shader.SetGlobalFloat("_EnableBake_Supersample", 0);
+                        Shader.SetGlobalFloat("_MipLevel", 0);
+                    }
                 }
 
-                SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Converting to SRGB (again)...");
+                SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Converting LUT to SRGB...");
                 // Convert linear to srgb in the texture
                 for (int mip = 0; mip < lutMipCount; mip++)
                 {
                     Texture2D texLut = lutTextures[q][mip];
-                    var data = texLut.GetRawTextureData<float>();
-                    for (int j = 0; j < data.Length; j++)
+                    int res = Mathf.Max(1, LUTResolution >> mip);
+                    for (int x = 0; x < res; x++)
                     {
-                        data[j] = Mathf.LinearToGammaSpace(data[j]);
+                        for (int y = 0; y < res; y++)
+                        {
+                            Color c = texLut.GetPixel(x, y);
+                            c.r = Mathf.LinearToGammaSpace(c.r);
+                            c.g = Mathf.LinearToGammaSpace(c.g);
+                            c.b = Mathf.LinearToGammaSpace(c.b);
+                            texLut.SetPixel(x, y, c);
+                        }
                     }
                     texLut.Apply(false, false);
                 }
                 SetProgress(q / (float)gobos.Length, "Generating " + (q + 1) + "/" + gobos.Length + " - Done...");
+
+                Object.DestroyImmediate(InputGobo);
             }
 
             Scene scene = SceneManager.GetActiveScene();
@@ -225,16 +257,25 @@ public class LUTBeamManager : MonoBehaviour
                 {
                     EditorUtility.CompressTexture(goboTextures[j][mip], format, TextureCompressionQuality.Best);
                     Graphics.CopyTexture(goboTextures[j][mip], 0, 0, texArray, j, mip);
+                    Object.DestroyImmediate(goboTextures[j][mip]);
                 }
 
                 for (int mip = 0; mip < lutMipCount; mip++)
                 {
                     EditorUtility.CompressTexture(lutTextures[j][mip], format, TextureCompressionQuality.Best);
                     Graphics.CopyTexture(lutTextures[j][mip], 0, 0, lutArray, j, mip);
+                    Object.DestroyImmediate(lutTextures[j][mip]);
+                }
+
+                for (int mip = 0; mip < goboMipCount; mip++)
+                {
+                    Object.DestroyImmediate(goboTexturesExtraBlur[j][mip]);
                 }
             }
 
             SetProgress(0.5f, "Creating");
+
+            Object.DestroyImmediate(material);
 
             string texArrayFilePath = $"{AutoGenerateDirectory}/{scene.name} - Gobo Textures.asset";
             string lutArrayFilePath = $"{AutoGenerateDirectory}/{scene.name} - LUT Textures.asset";
@@ -271,11 +312,13 @@ public class LUTBeamManager : MonoBehaviour
 
             SetProgress(0.8f, "Saving");
             AssetDatabase.SaveAssets();
+            Debug.Log($"[LUT Beams] Saved '{texArrayFilePath}' and '{lutArrayFilePath}'.", this);
 
             EditorGUIUtility.PingObject(lutArray);
         }
 
         EditorUtility.ClearProgressBar();
+        Debug.Log("[LUT Beams] Generation complete.", this);
     }
 #endif
 }
